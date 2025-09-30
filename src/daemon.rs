@@ -171,7 +171,7 @@ impl WeatherAlertDaemon {
             "other"
         };
 
-        let text = format!("{:.0}°", weather.temperature);
+        let text = format!("{:.0}° | {}", weather.temperature, weather.description);
         let tooltip = format!(
             "{}\nTemp: {:.1}°\nHumidity: {:.0}%\nWind: {:.1} m/s",
             weather.description, weather.temperature, weather.humidity, weather.wind_speed
