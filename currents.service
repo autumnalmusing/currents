@@ -1,0 +1,28 @@
+[Unit]
+Description=Currents Weather Alerts Daemon
+Documentation=https://github.com/autumn/currents
+After=network.target
+
+[Service]
+Type=simple
+User=%i
+Group=%i
+ExecStart=%h/.cargo/bin/currents
+WorkingDirectory=%h
+Restart=always
+RestartSec=10
+Environment=RUST_LOG=info
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=%h/.config/currents
+
+# Resource limits
+MemoryMax=64M
+CPUQuota=10%
+
+[Install]
+WantedBy=multi-user.target
