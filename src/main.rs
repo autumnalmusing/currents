@@ -29,9 +29,9 @@ struct Args {
     #[arg(long)]
     test_simple: bool,
 
-    /// Output Waybar JSON from cache and exit
+    /// Output cached weather data as JSON and exit
     #[arg(long)]
-    waybar: bool,
+    output: bool,
 }
 
 #[tokio::main]
@@ -69,8 +69,8 @@ async fn main() -> Result<()> {
         return Ok(());
     }
     
-    // If only printing waybar JSON, try reading config for cache path, but fall back to default
-    if args.waybar {
+    // If only printing cached data, try reading config for cache path, but fall back to default
+    if args.output {
         // Try load config to get cache path; if it fails, use default CacheConfig
         let config = Config::load(&config_path).ok();
         let cache_path = config
@@ -86,7 +86,7 @@ async fn main() -> Result<()> {
                 return Ok(());
             }
             Err(e) => {
-                eprintln!("Waybar cache not available: {}", e);
+                eprintln!("Cache not available: {}", e);
                 std::process::exit(1);
             }
         }
