@@ -73,7 +73,7 @@
                 PrivateTmp = true;
                 ProtectSystem = "strict";
                 ProtectHome = "read-only";
-                ReadWritePaths = [ "%h/.config/currents" ];
+                ReadWritePaths = [ "%h/.config/currents" "%h/.cache/currents" ];
                 
                 # Resource limits
                 MemoryMax = "64M";
