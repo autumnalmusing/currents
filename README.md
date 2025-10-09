@@ -90,6 +90,31 @@ api_daily_limit = 1000  # Default: 1000 calls per day
 - **Precipitation**: Intensity and probability
 - **Description**: Keyword matching on weather descriptions
 
+### Alert Repetition Control
+
+Control how often alerts repeat using the `repeat` setting:
+
+- **`"once"`** (default): Alert only on first trigger, silent while condition persists, alerts again if condition clears and re-triggers
+- **`"always"`**: Alert every polling interval while condition is true (use sparingly!)
+- **`"3600"`** (or any number): Alert every N seconds while condition persists (e.g., every hour)
+
+**Examples:**
+```toml
+[[alerts]]
+name = "hot-weather"
+repeat = "once"      # Default: only alert when temperature first exceeds threshold
+message = "It's hot!"
+[alerts.condition.temperature]
+min = 30.0
+
+[[alerts]]
+name = "cold-weather"  
+repeat = "3600"      # Alert every hour while cold
+message = "Still cold!"
+[alerts.condition.temperature]
+max = 5.0
+```
+
 ## Usage
 
 ### Running in Foreground (for testing)

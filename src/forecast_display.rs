@@ -1,102 +1,75 @@
 use crate::weather::ForecastData;
+use comfy_table::*;
+use comfy_table::presets::UTF8_FULL;
 
 pub struct ForecastFormatter;
 
 impl ForecastFormatter {
     pub fn format(forecast: &ForecastData) -> String {
-        let mut output = String::new();
+        let mut table = Table::new();
         
-        // Get terminal width, default to 80 if unable to detect
-        let term_width = terminal_size::terminal_size()
-            .map(|(w, _)| w.0 as usize)
-            .unwrap_or(80);
+        // Set up table styling
+        table.load_preset(UTF8_FULL)
+             .set_content_arrangement(ContentArrangement::Dynamic);
         
-        // Calculate column width based on terminal width and number of days
-        // Leave space for separators (1 space between columns)
-        let num_days = forecast.days.len();
-        let separator_space = num_days.saturating_sub(1); // spaces between columns
-        let available_width = term_width.saturating_sub(separator_space);
-        let col_width = (available_width / num_days).max(16).min(24); // min 16, max 24
-        
-        // Calculate description max length based on column width
-        let desc_max_len = col_width.saturating_sub(4); // Account for padding
-        
-        // Header
-        output.push_str(&format!("\n📍 5-Day Forecast for {}\n", forecast.location));
-        output.push_str(&format!("{}\n\n", "═".repeat(term_width.min(col_width * num_days + separator_space))));
-        
-        // Day names row
-        let day_names: Vec<String> = forecast.days.iter()
-            .map(|day| Self::pad_center(&day.date.format("%a %m/%d").to_string(), col_width))
+        // Set header with day names
+        let header: Vec<Cell> = forecast.days.iter()
+            .map(|day| {
+                Cell::new(day.date.format("%a %m/%d"))
+                    .set_alignment(CellAlignment::Center)
+            })
             .collect();
-        output.push_str(&format!("{}\n", day_names.join(" ")));
+        table.set_header(header);
         
-        // Weather icons row
-        let icons: Vec<String> = forecast.days.iter()
-            .map(|day| Self::pad_center(&format!(" {} ", Self::get_weather_icon(&day.description)), col_width))
+        // Weather icon + description row
+        let weather_row: Vec<Cell> = forecast.days.iter()
+            .map(|day| {
+                let icon = Self::get_weather_icon(&day.description);
+                Cell::new(format!("{}\n{}", icon, day.description))
+                    .set_alignment(CellAlignment::Center)
+            })
             .collect();
-        output.push_str(&format!("{}\n", icons.join(" ")));
-        
-        // Description row
-        let descriptions: Vec<String> = forecast.days.iter()
-            .map(|day| Self::pad_center(&Self::truncate(&day.description, desc_max_len), col_width))
-            .collect();
-        output.push_str(&format!("{}\n\n", descriptions.join(" ")));
+        table.add_row(weather_row);
         
         // Temperature row
-        let temps: Vec<String> = forecast.days.iter()
-            .map(|day| Self::pad_center(
-                &format!("{}°-{}°", Self::format_temp(day.temp_min), Self::format_temp(day.temp_max)),
-                col_width
-            ))
+        let temp_row: Vec<Cell> = forecast.days.iter()
+            .map(|day| {
+                Cell::new(format!("🌡️  {}°-{}°", 
+                    Self::format_temp(day.temp_min), 
+                    Self::format_temp(day.temp_max)))
+                    .set_alignment(CellAlignment::Center)
+            })
             .collect();
-        output.push_str(&format!("{}\n", temps.join(" ")));
+        table.add_row(temp_row);
         
         // Humidity row
-        let humidity: Vec<String> = forecast.days.iter()
-            .map(|day| Self::pad_center(&format!("💧 {}%", day.humidity as i32), col_width))
+        let humidity_row: Vec<Cell> = forecast.days.iter()
+            .map(|day| {
+                Cell::new(format!("💧 {}%", day.humidity as i32))
+                    .set_alignment(CellAlignment::Center)
+            })
             .collect();
-        output.push_str(&format!("{}\n", humidity.join(" ")));
+        table.add_row(humidity_row);
         
         // Wind row
-        let wind: Vec<String> = forecast.days.iter()
-            .map(|day| Self::pad_center(&format!("💨 {:.1}m/s", day.wind_speed), col_width))
+        let wind_row: Vec<Cell> = forecast.days.iter()
+            .map(|day| {
+                Cell::new(format!("💨 {:.1}m/s", day.wind_speed))
+                    .set_alignment(CellAlignment::Center)
+            })
             .collect();
-        output.push_str(&format!("{}\n", wind.join(" ")));
+        table.add_row(wind_row);
         
         // Precipitation row
-        let precip: Vec<String> = forecast.days.iter()
-            .map(|day| Self::pad_center(
-                &format!("☔ {}%", (day.precipitation_probability * 100.0) as i32),
-                col_width
-            ))
+        let precip_row: Vec<Cell> = forecast.days.iter()
+            .map(|day| {
+                Cell::new(format!("☔ {}%", (day.precipitation_probability * 100.0) as i32))
+                    .set_alignment(CellAlignment::Center)
+            })
             .collect();
-        output.push_str(&format!("{}\n", precip.join(" ")));
+        table.add_row(precip_row);
         
-        output.push_str(&format!("\n{}\n", "═".repeat(term_width.min(col_width * num_days + separator_space))));
-        output
-    }
-    
-    fn truncate(text: &str, max_len: usize) -> String {
-        if text.len() > max_len {
-            format!("{}...", &text[..max_len.saturating_sub(3)])
-        } else {
-            text.to_string()
-        }
-    }
-    
-    fn pad_center(text: &str, width: usize) -> String {
-        let visible_len = Self::visible_length(text);
-        
-        if visible_len >= width {
-            return text.to_string();
-        }
-        
-        let padding = width - visible_len;
-        let left_pad = padding / 2;
-        let right_pad = padding - left_pad;
-        
-        format!("{}{}{}", " ".repeat(left_pad), text, " ".repeat(right_pad))
+        format!("\n📍 5-Day Forecast for {}\n{}\n", forecast.location, table)
     }
     
     fn get_weather_icon(description: &str) -> &'static str {
@@ -137,30 +110,5 @@ impl ForecastFormatter {
     
     fn format_temp(temp: f64) -> String {
         format!("{:.0}", temp)
-    }
-    
-    fn visible_length(text: &str) -> usize {
-        // Simple approximation: count chars but treat emoji sequences specially
-        let mut len = 0;
-        let mut chars = text.chars().peekable();
-        
-        while let Some(ch) = chars.next() {
-            if ch as u32 >= 0x1F000 {
-                // Emoji range, count as 2 for display width
-                len += 2;
-                // Skip variation selectors and zero-width joiners
-                while let Some(&next_ch) = chars.peek() {
-                    if (next_ch as u32) == 0xFE0F || (next_ch as u32) == 0x200D {
-                        chars.next();
-                    } else {
-                        break;
-                    }
-                }
-            } else {
-                len += 1;
-            }
-        }
-        
-        len
     }
 }

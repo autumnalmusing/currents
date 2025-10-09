@@ -1,35 +1,95 @@
 use crate::config::{AlertRule, WeatherCondition, TemperatureRange, Range, PrecipitationCondition};
 use crate::weather::WeatherData;
 use tracing::info;
+use std::collections::HashMap;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Debug, Clone)]
 pub struct AlertEngine {
     rules: Vec<AlertRule>,
+    state: AlertState,
+}
+
+#[derive(Debug, Clone)]
+struct AlertState {
+    // Maps rule name to the last time it was triggered
+    last_triggered: HashMap<String, u64>,
+    // Maps rule name to whether the condition is currently active
+    currently_active: HashMap<String, bool>,
 }
 
 impl AlertEngine {
     pub fn new(rules: Vec<AlertRule>) -> Self {
-        Self { rules }
+        Self { 
+            rules,
+            state: AlertState {
+                last_triggered: HashMap::new(),
+                currently_active: HashMap::new(),
+            }
+        }
     }
     
-    pub fn check_alerts(&self, weather: &WeatherData) -> Vec<TriggeredAlert> {
+    pub fn check_alerts(&mut self, weather: &WeatherData) -> Vec<TriggeredAlert> {
         let mut triggered = Vec::new();
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
         
         for rule in &self.rules {
             if !rule.enabled {
                 continue;
             }
             
-            if self.matches_condition(&rule.condition, weather) {
-                info!("Alert triggered: {}", rule.name);
-                triggered.push(TriggeredAlert {
-                    rule_name: rule.name.clone(),
-                    message: rule.message.clone(),
-                });
+            let condition_matches = self.matches_condition(&rule.condition, weather);
+            let was_active = self.state.currently_active.get(&rule.name).copied().unwrap_or(false);
+            
+            // Update current state
+            self.state.currently_active.insert(rule.name.clone(), condition_matches);
+            
+            if condition_matches {
+                let should_notify = self.should_send_alert(&rule, was_active, now);
+                
+                if should_notify {
+                    info!("Alert triggered: {}", rule.name);
+                    self.state.last_triggered.insert(rule.name.clone(), now);
+                    triggered.push(TriggeredAlert {
+                        rule_name: rule.name.clone(),
+                        message: rule.message.clone(),
+                    });
+                }
             }
         }
         
         triggered
+    }
+    
+    fn should_send_alert(&self, rule: &AlertRule, was_active: bool, now: u64) -> bool {
+        match rule.repeat.as_str() {
+            "always" => {
+                // Always send the alert, every time the condition is checked
+                true
+            }
+            "once" => {
+                // Only send if the condition was not previously active (edge-triggered)
+                !was_active
+            }
+            repeat_str => {
+                // Try to parse as duration in seconds
+                if let Ok(seconds) = repeat_str.parse::<u64>() {
+                    // Check if enough time has passed since last alert
+                    if let Some(&last_time) = self.state.last_triggered.get(&rule.name) {
+                        now - last_time >= seconds
+                    } else {
+                        // Never triggered before
+                        true
+                    }
+                } else {
+                    // Invalid format, default to "once" behavior
+                    !was_active
+                }
+            }
+        }
     }
     
     fn matches_condition(&self, condition: &WeatherCondition, weather: &WeatherData) -> bool {

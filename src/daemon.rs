@@ -8,11 +8,12 @@ use crate::alerts::AlertEngine;
 use crate::notifications::NotificationManager;
 use std::fs;
 use std::path::Path;
+use std::cell::RefCell;
 
 pub struct WeatherAlertDaemon {
     config: Config,
     weather_fetcher: WeatherFetcher,
-    alert_engine: AlertEngine,
+    alert_engine: RefCell<AlertEngine>,
     notification_manager: NotificationManager,
 }
 
@@ -26,7 +27,7 @@ impl WeatherAlertDaemon {
             config.weather.api_daily_limit,
         );
         
-        let alert_engine = AlertEngine::new(config.alerts.clone());
+        let alert_engine = RefCell::new(AlertEngine::new(config.alerts.clone()));
         let notification_manager = NotificationManager::new(config.notifications.clone());
         
         Ok(Self {
@@ -52,7 +53,7 @@ impl WeatherAlertDaemon {
                     if let Err(e) = self.write_cache_snapshot(&weather) {
                         warn!("Failed to write cache snapshot: {}", e);
                     }
-                    let triggered_alerts = self.alert_engine.check_alerts(&weather);
+                    let triggered_alerts = self.alert_engine.borrow_mut().check_alerts(&weather);
                     
                     for alert in triggered_alerts {
                         if let Err(e) = self.notification_manager.send_alert(&alert).await {
@@ -98,7 +99,7 @@ impl WeatherAlertDaemon {
                       weather.temperature, weather.humidity, weather.wind_speed);
                 info!("Description: {}", weather.description);
                 
-                let triggered_alerts = self.alert_engine.check_alerts(&weather);
+                let triggered_alerts = self.alert_engine.borrow_mut().check_alerts(&weather);
                 
                 if triggered_alerts.is_empty() {
                     info!("No alerts triggered");

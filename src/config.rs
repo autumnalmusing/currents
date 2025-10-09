@@ -35,6 +35,13 @@ pub struct AlertRule {
     pub condition: WeatherCondition,
     pub message: String,
     pub enabled: bool,
+    /// How often to repeat the alert: "once" (default), "always", or duration in seconds
+    #[serde(default = "default_alert_repeat")]
+    pub repeat: String,
+}
+
+fn default_alert_repeat() -> String {
+    "once".to_string()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
