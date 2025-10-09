@@ -1,18 +1,95 @@
 THE PEER PRODUCTION LICENSE
 
-Copyfarleft: This is a license for Free Software with a mandatory reciprocity obligation.
+Version 1.0
 
-This license is derived from the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
+Copyright (c) 2024 autumn
 
-THE WORK (AS DEFINED BELOW) IS PROVIDED UNDER THE TERMS OF THIS COPYFARLEFT PUBLIC LICENSE ("LICENSE"). THE WORK IS PROTECTED BY COPYRIGHT AND ALL OTHER APPLICABLE LAWS. ANY USE OF THE WORK OTHER THAN AS AUTHORIZED UNDER THIS LICENSE OR COPYRIGHT LAW IS PROHIBITED. BY EXERCISING ANY RIGHTS TO THE WORK PROVIDED IN THIS LICENSE, YOU AGREE TO BE BOUND BY THE TERMS OF THIS LICENSE. TO THE EXTENT THIS LICENSE MAY BE CONSIDERED TO BE A CONTRACT, THE LICENSOR GRANTS YOU THE RIGHTS CONTAINED HERE IN AS CONSIDERATION FOR ACCEPTING THE TERMS AND CONDITIONS OF THIS LICENSE AND FOR AGREEING TO BE BOUND BY THE TERMS AND CONDITIONS OF THIS LICENSE.
+This work is licensed under the Peer Production License.
 
-You are free to:
-- Share — copy and redistribute the material in any medium or format
-- Adapt — remix, transform, and build upon the material
+The Peer Production License is a Copyfarleft license, derived from the 
+Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
 
-Under the following terms:
-- BY: You must give appropriate credit, provide a link to the license, and indicate if changes were made
-- NC: You may not use the material for commercial purposes UNLESS you are a worker-owned business or cooperative
-- SA: If you remix, transform, or build upon the material, you must distribute your contributions under the same license
+TERMS AND CONDITIONS
 
-For the full legal text, see: https://wiki.p2pfoundation.net/Peer_Production_License
+1. DEFINITIONS
+
+"Work" means the software, documentation, and other creative works provided 
+under this License.
+
+"You" means the individual or legal entity exercising rights under this License.
+
+"NonCommercial" means not primarily intended for or directed towards commercial 
+advantage or monetary compensation, with an exception for worker-owned cooperatives 
+and collectives.
+
+"Worker-owned" means an organization where the workers who create the value also 
+own and control the means of production and democratically make decisions about 
+the organization.
+
+2. GRANT OF RIGHTS
+
+Subject to the terms of this License, the Licensor grants You a worldwide, 
+royalty-free, non-sublicensable, non-exclusive license to:
+
+a) Use, copy, modify, and distribute the Work
+
+b) Make derivative works based on the Work
+
+3. RESTRICTIONS
+
+a) COPYFARLEFT RESTRICTION: You may exercise the rights granted in Section 2 
+for any purposes ONLY IF:
+
+   - You are a natural person
+   - You are a non-profit organization  
+   - You are a worker-owned cooperative or collective where:
+     * Workers own the organization democratically
+     * Surplus is distributed among the worker-owners
+     * Decision-making is democratic
+
+b) CAPITALIST RESTRICTION: You may NOT exercise the rights if you are:
+   
+   - A for-profit corporation that is NOT worker-owned
+   - Any entity that exploits wage labor
+   - Any entity where ownership and control is not in the hands of the workers
+
+c) SHARE-ALIKE: If You distribute the Work or derivative works, You must:
+   
+   - Provide attribution to the original author(s)
+   - License your derivative work under this same License
+   - Make source code available if you distribute binary forms
+
+4. ADDITIONAL TERMS
+
+a) This License does not grant permission to use trade names, trademarks, 
+   service marks, or product names of the Licensor.
+
+b) You may not apply legal terms or technological measures that legally 
+   restrict others from doing anything this License permits.
+
+5. COMMERCIAL EXCEPTION
+
+Worker-owned cooperatives and collectives MAY use this Work commercially, 
+as they represent a form of commons-based production where workers collectively 
+own and control the means of production.
+
+6. WARRANTY DISCLAIMER
+
+THE WORK IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A 
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION 
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+WORK OR THE USE OR OTHER DEALINGS IN THE WORK.
+
+7. TERMINATION
+
+This License and the rights granted hereunder will terminate automatically upon 
+any breach by You of the terms of this License.
+
+For more information about the Peer Production License, see:
+https://wiki.p2pfoundation.net/Peer_Production_License
+
+This is a Copyfarleft license that ensures the commons is available to those 
+who contribute to the commons, while preventing exploitation by capitalist firms 
+that do not operate on cooperative principles.
