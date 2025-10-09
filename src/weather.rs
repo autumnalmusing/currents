@@ -3,6 +3,7 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use tracing::info;
+use crate::api_stats::ApiStatsTracker;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WeatherData {
@@ -27,6 +28,7 @@ pub struct WeatherFetcher {
     location: String,
     units: String,
     provider: String,
+    api_stats: Option<ApiStatsTracker>,
 }
 
 impl WeatherFetcher {
@@ -36,21 +38,34 @@ impl WeatherFetcher {
             .build()
             .expect("Failed to create HTTP client");
         
+        // Initialize API stats tracker (ignore errors if it fails)
+        let api_stats = ApiStatsTracker::with_default_path().ok();
+        
         Self {
             client,
             api_key,
             location,
             units,
             provider,
+            api_stats,
         }
     }
     
     pub async fn fetch_weather(&self) -> Result<WeatherData> {
-        match self.provider.as_str() {
+        let result = match self.provider.as_str() {
             "openweathermap" => self.fetch_openweathermap().await,
             "weatherapi" => self.fetch_weatherapi().await,
             _ => Err(anyhow::anyhow!("Unsupported weather provider: {}", self.provider)),
+        };
+        
+        // Increment API call counter if fetch was successful
+        if result.is_ok() {
+            if let Some(ref tracker) = self.api_stats {
+                let _ = tracker.increment();
+            }
         }
+        
+        result
     }
     
     async fn fetch_openweathermap(&self) -> Result<WeatherData> {

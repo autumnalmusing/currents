@@ -32,6 +32,10 @@ struct Args {
     /// Output cached weather data as JSON and exit
     #[arg(long)]
     output: bool,
+    
+    /// Output API call statistics for the current day (UTC)
+    #[arg(long)]
+    api_stats: bool,
 }
 
 #[tokio::main]
@@ -67,6 +71,30 @@ async fn main() -> Result<()> {
         notification_manager.send_test_notification().await?;
         info!("Simple test notification sent successfully");
         return Ok(());
+    }
+    
+    // Handle API stats output
+    if args.api_stats {
+        use currents::api_stats::ApiStatsTracker;
+        
+        match ApiStatsTracker::with_default_path() {
+            Ok(tracker) => {
+                match tracker.get_count() {
+                    Ok(count) => {
+                        println!("{}", count);
+                        return Ok(());
+                    }
+                    Err(e) => {
+                        eprintln!("Failed to get API call count: {}", e);
+                        std::process::exit(1);
+                    }
+                }
+            }
+            Err(e) => {
+                eprintln!("Failed to initialize API stats tracker: {}", e);
+                std::process::exit(1);
+            }
+        }
     }
     
     // If only printing cached data, try reading config for cache path, but fall back to default

@@ -3,3 +3,4 @@ pub mod daemon;
 pub mod weather;
 pub mod alerts;
 pub mod notifications;
+pub mod api_stats;
