@@ -8,6 +8,8 @@ A fast, lightweight daemon written in Rust that monitors weather conditions and 
 - **Flexible Configuration**: Supports both TOML and KDL formats for human-readable configuration
 - **Multiple Weather Providers**: Supports OpenWeatherMap and WeatherAPI
 - **Rich Alert Conditions**: Temperature, humidity, wind speed, precipitation, and description-based alerts
+- **5-Day Forecast**: Beautiful, emoji-rich forecast display with detailed weather information
+- **API Rate Limiting**: Automatic tracking to ensure you stay under 1000 calls/day (prevents charges)
 - **System Integration**: systemd service with proper logging and resource limits
 - **Desktop Notifications**: Uses libnotify for native Linux notifications
 
@@ -63,8 +65,22 @@ The daemon supports both TOML and KDL configuration formats. The format is autom
 
 ### Weather Providers
 
-- **OpenWeatherMap**: Free tier available, requires API key
-- **WeatherAPI**: Free tier available, requires API key
+- **OpenWeatherMap**: Free tier available (1000 calls/day), requires API key
+- **WeatherAPI**: Free tier available (1000 calls/day), requires API key
+
+### API Rate Limiting
+
+Configure the maximum daily API calls in your config file:
+
+```toml
+[weather]
+api_daily_limit = 1000  # Default: 1000 calls per day
+```
+
+- **Default: 1000 calls/day** - Stays within free tier limits
+- **Increase if needed** - Set higher if you're willing to pay for more API calls
+- **Automatic protection** - Prevents charges by blocking requests after limit is reached
+- **Resets at midnight UTC** - Counter resets automatically each day
 
 ### Alert Conditions
 
@@ -96,6 +112,38 @@ You can test your notification setup with several options:
 ./target/release/currents --config config.toml --test-custom "My Test" "This is a custom message"
 ```
 
+### Weather Forecast
+
+Display a beautiful 5-day forecast directly in your terminal:
+
+```bash
+# Show 5-day forecast
+./target/release/currents --forecast
+
+# With custom config path
+./target/release/currents --config ~/.config/currents/config.toml --forecast
+```
+
+The forecast displays:
+- Daily high and low temperatures
+- Weather conditions with emoji icons
+- Humidity, wind speed, and precipitation probability
+- Automatically checks API rate limits before making requests
+
+### API Usage Monitoring
+
+Keep track of your API usage to stay under the free tier limit (1000 calls/day):
+
+```bash
+# Check current day's API call count
+./target/release/currents --api-stats
+
+# View cached weather data (no API call)
+./target/release/currents --output
+```
+
+**Rate Limiting**: The daemon automatically prevents API calls if you've reached 1000 calls for the day (UTC). This ensures you never incur charges from weather providers. The limit resets at midnight UTC.
+
 ### Service Management
 ```bash
 # Check status
@@ -114,10 +162,12 @@ The project is structured as follows:
 
 - `src/main.rs` - Entry point and CLI handling
 - `src/config.rs` - Configuration parsing with KDL support
-- `src/weather.rs` - Weather data fetching from various APIs
+- `src/weather.rs` - Weather data fetching from various APIs (current + forecast)
 - `src/alerts.rs` - Alert condition matching engine
 - `src/notifications.rs` - Desktop notification system
 - `src/daemon.rs` - Main daemon logic and polling
+- `src/api_stats.rs` - API call tracking and rate limiting
+- `src/forecast_display.rs` - Pretty forecast formatting with emojis
 - `currents.service` - systemd service template
 - `install-service.sh` - Script to install systemd service (installs but doesn't start)
 

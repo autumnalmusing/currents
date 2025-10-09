@@ -19,6 +19,14 @@ pub struct WeatherConfig {
     pub location: String,
     pub units: String, // "metric", "imperial", "kelvin"
     pub provider: String, // "openweathermap", "weatherapi", etc.
+    /// Maximum API calls allowed per day (default: 1000)
+    /// Increase this if you're willing to pay for more API calls
+    #[serde(default = "default_api_limit")]
+    pub api_daily_limit: u64,
+}
+
+fn default_api_limit() -> u64 {
+    1000
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

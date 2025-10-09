@@ -23,6 +23,7 @@ impl WeatherAlertDaemon {
             config.weather.location.clone(),
             config.weather.units.clone(),
             config.weather.provider.clone(),
+            config.weather.api_daily_limit,
         );
         
         let alert_engine = AlertEngine::new(config.alerts.clone());

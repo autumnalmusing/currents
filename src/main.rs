@@ -8,6 +8,7 @@ use currents::daemon::WeatherAlertDaemon;
 #[derive(Parser)]
 #[command(name = "currents")]
 #[command(about = "A daemon for sending weather pattern alerts")]
+#[command(version)]
 struct Args {
     /// Path to configuration file
     #[arg(short, long, default_value = "~/.config/currents/config.toml")]
@@ -36,6 +37,10 @@ struct Args {
     /// Output API call statistics for the current day (UTC)
     #[arg(long)]
     api_stats: bool,
+
+    /// Display 5-day forecast
+    #[arg(long)]
+    forecast: bool,
 }
 
 #[tokio::main]
@@ -92,6 +97,47 @@ async fn main() -> Result<()> {
             }
             Err(e) => {
                 eprintln!("Failed to initialize API stats tracker: {}", e);
+                std::process::exit(1);
+            }
+        }
+    }
+
+    // Handle forecast display
+    if args.forecast {
+        use currents::weather::WeatherFetcher;
+        use currents::forecast_display::ForecastFormatter;
+        use currents::api_stats::ApiStatsTracker;
+        
+        let config = Config::load(&config_path)?;
+        
+        // Check remaining API calls
+        if let Ok(tracker) = ApiStatsTracker::with_default_path() {
+            if let Ok(remaining) = tracker.remaining_calls(config.weather.api_daily_limit) {
+                if remaining == 0 {
+                    eprintln!("Error: Daily API limit ({} calls) reached.", config.weather.api_daily_limit);
+                    eprintln!("Limit will reset at midnight UTC.");
+                    std::process::exit(1);
+                }
+                eprintln!("API calls remaining today: {}/{}\n", remaining, config.weather.api_daily_limit);
+            }
+        }
+        
+        let weather_fetcher = WeatherFetcher::new(
+            config.weather.api_key.clone(),
+            config.weather.location.clone(),
+            config.weather.units.clone(),
+            config.weather.provider.clone(),
+            config.weather.api_daily_limit,
+        );
+        
+        match weather_fetcher.fetch_forecast().await {
+            Ok(forecast) => {
+                let formatted = ForecastFormatter::format(&forecast);
+                println!("{}", formatted);
+                return Ok(());
+            }
+            Err(e) => {
+                eprintln!("Failed to fetch forecast: {}", e);
                 std::process::exit(1);
             }
         }

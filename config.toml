@@ -6,6 +6,9 @@ api_key = "your-openweathermap-api-key-here"
 location = "London,UK"
 units = "metric"
 provider = "openweathermap"
+# Maximum API calls per day (default: 1000, increase if you're willing to pay for more)
+# Free tiers typically allow 1000 calls/day before charges apply
+api_daily_limit = 1000
 
 [notifications]
 urgency = "normal"

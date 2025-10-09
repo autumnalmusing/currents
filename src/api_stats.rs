@@ -83,6 +83,19 @@ impl ApiStatsTracker {
         Ok(data.count)
     }
 
+    /// Check if we can make an API call without exceeding the daily limit
+    /// Returns true if we're under the limit, false otherwise
+    pub fn can_make_call(&self, limit: u64) -> Result<bool> {
+        let count = self.get_count()?;
+        Ok(count < limit)
+    }
+
+    /// Get how many calls are remaining today
+    pub fn remaining_calls(&self, limit: u64) -> Result<u64> {
+        let count = self.get_count()?;
+        Ok(limit.saturating_sub(count))
+    }
+
     /// Get the current date in YYYY-MM-DD format (UTC)
     fn get_current_date_utc() -> String {
         let now: DateTime<Utc> = Utc::now();
