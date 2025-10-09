@@ -20,6 +20,41 @@ interval_seconds = 300
 retry_attempts = 3
 retry_delay_seconds = 60
 
+# Forecast Display Highlighting (for --forecast command)
+# Values exceeding these thresholds will be colored in the forecast table
+# 
+# Color Options:
+#   - Named colors: "black", "red", "green", "yellow", "blue", "magenta", "cyan", "white"
+#   - Hex colors: "#d3c6aa", "#ff5733", "#f00" (3 or 6 digit hex codes)
+#   - Named colors respect your terminal color scheme
+#   - Hex colors display exact RGB values (if your terminal supports it)
+[forecast_highlights.temperature]
+high = 30.0        # Temperatures >= this will be highlighted (in your configured units)
+high_color = "red" # Color for high temperatures (default: "red")
+low = 0.0          # Temperatures <= this will be highlighted
+low_color = "blue" # Color for low temperatures (default: "blue")
+
+# Optional: Highlight high/low humidity (uncomment to enable)
+# [forecast_highlights.humidity]
+# high = 80.0             # Humidity >= 80% highlighted
+# high_color = "#89b4fa"  # You can use hex colors for custom shades!
+# low = 20.0              # Humidity <= 20% highlighted
+# low_color = "yellow"    # Or use named colors
+
+# Optional: Highlight high/low wind speeds (uncomment to enable)
+# [forecast_highlights.wind_speed]
+# high = 15.0           # Wind >= 15 m/s highlighted
+# high_color = "red"
+# low = 2.0             # Wind <= 2 m/s highlighted
+# low_color = "cyan"
+
+# Optional: Highlight precipitation probability (uncomment to enable)
+# [forecast_highlights.precipitation]
+# high = 70.0           # Precipitation >= 70% highlighted
+# high_color = "magenta"
+# low = 5.0             # Precipitation <= 5% highlighted
+# low_color = "green"
+
 [[alerts]]
 name = "hot-weather"
 enabled = true

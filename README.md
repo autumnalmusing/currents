@@ -15,7 +15,67 @@ A fast, lightweight daemon written in Rust that monitors weather conditions and 
 
 ## Installation
 
-### Option 1: Install from source (recommended)
+### Option 1: NixOS / Home Manager (Recommended for Nix users)
+
+If you're using NixOS or home-manager, you can configure currents declaratively:
+
+1. **Add to your flake inputs**:
+   ```nix
+   inputs.currents.url = "github:yourusername/currents";
+   ```
+
+2. **Import the home-manager module**:
+   ```nix
+   imports = [
+     inputs.currents.homeManagerModules.currents
+   ];
+   ```
+
+3. **Configure in your home.nix**:
+   ```nix
+   services.currents = {
+     enable = true;
+     
+     weather = {
+       # Use apiKeyFile for better security (recommended)
+       apiKeyFile = "/run/secrets/openweathermap-api-key";
+       # Or use apiKey directly (not recommended for production)
+       # apiKey = "your-api-key-here";
+       
+       location = "Denver,US";
+       units = "metric";
+       provider = "openweathermap";
+     };
+     
+     alerts = [
+       {
+         name = "hot-weather";
+         enabled = true;
+         message = "Temperature is above 30°C!";
+         repeat = "once";
+         condition.temperature.min = 30.0;
+       }
+     ];
+     
+     # Customize forecast colors
+     forecastHighlights.temperature = {
+       high = 30.0;
+       highColor = "#f38ba8";  # Hex colors or named colors
+       low = 0.0;
+       lowColor = "#89b4fa";
+     };
+   };
+   ```
+
+See `nix/example-config.nix` for a complete configuration example with all available options.
+
+The service will automatically:
+- Install the currents package
+- Generate `~/.config/currents/config.toml` from your Nix config
+- Set up and start the systemd user service
+- Handle resource limits and security settings
+
+### Option 2: Install from source
 
 1. **Install the binary**:
    ```bash

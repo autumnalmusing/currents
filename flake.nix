@@ -42,46 +42,8 @@
         };
       
       # Home Manager module
-      homeManagerModules.currents = { config, lib, pkgs, ... }:
-        with lib;
-        let cfg = config.services.currents;
-        in {
-          options.services.currents = {
-            enable = mkEnableOption "Currents, a weather alert daemon";
-            package = mkOption {
-              type = types.package;
-              default = self.packages.${system}.default;
-              description = "The currents package to use";
-            };
-          };
-          config = mkIf cfg.enable {
-            home.packages = [ cfg.package ];
-            systemd.user.services.currents = {
-              Unit = {
-                Description = "Currents, a weather alert daemon";
-                After = [ "graphical-session.target" ];
-              };
-              Service = {
-                Type = "simple";
-                ExecStart = "${cfg.package}/bin/currents";
-                Restart = "always";
-                RestartSec = 10;
-                Environment = "RUST_LOG=info";
-                
-                # Security settings
-                NoNewPrivileges = true;
-                PrivateTmp = true;
-                ProtectSystem = "strict";
-                ProtectHome = "read-only";
-                ReadWritePaths = [ "%h/.config/currents" "%h/.cache/currents" ];
-                
-                # Resource limits
-                MemoryMax = "64M";
-                CPUQuota = "10%";
-              };
-              Install.WantedBy = [ "default.target" ];
-            };
-          };
-        };
+      homeManagerModules.currents = import ./nix/home-manager-module.nix {
+        inherit self system;
+      };
     };
 }

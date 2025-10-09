@@ -132,7 +132,7 @@ async fn main() -> Result<()> {
         
         match weather_fetcher.fetch_forecast().await {
             Ok(forecast) => {
-                let formatted = ForecastFormatter::format(&forecast);
+                let formatted = ForecastFormatter::format(&forecast, &config.forecast_highlights);
                 println!("{}", formatted);
                 return Ok(());
             }

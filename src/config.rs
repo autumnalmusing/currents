@@ -11,6 +11,8 @@ pub struct Config {
     pub polling: PollingConfig,
     #[serde(default)]
     pub cache: CacheConfig,
+    #[serde(default)]
+    pub forecast_highlights: ForecastHighlights,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -102,6 +104,101 @@ impl Default for CacheConfig {
         Self {
             path: default_path,
             ttl_seconds: 300,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ForecastHighlights {
+    /// Temperature thresholds (in configured units)
+    #[serde(default)]
+    pub temperature: TemperatureHighlights,
+    /// Humidity thresholds (percentage)
+    #[serde(default)]
+    pub humidity: ValueHighlights,
+    /// Wind speed thresholds (in configured units)
+    #[serde(default)]
+    pub wind_speed: ValueHighlights,
+    /// Precipitation probability thresholds (percentage)
+    #[serde(default)]
+    pub precipitation: ValueHighlights,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TemperatureHighlights {
+    /// Temperature above this is highlighted
+    pub high: Option<f64>,
+    /// Color for high temperature (default: "red")
+    /// Options: "black", "red", "green", "yellow", "blue", "magenta", "cyan", "white"
+    #[serde(default = "default_high_temp_color")]
+    pub high_color: String,
+    /// Temperature below this is highlighted
+    pub low: Option<f64>,
+    /// Color for low temperature (default: "blue")
+    #[serde(default = "default_low_temp_color")]
+    pub low_color: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ValueHighlights {
+    /// Value above this is highlighted
+    pub high: Option<f64>,
+    /// Color for high value (default: "red")
+    /// Options: "black", "red", "green", "yellow", "blue", "magenta", "cyan", "white"
+    #[serde(default = "default_high_color")]
+    pub high_color: String,
+    /// Value below this is highlighted
+    pub low: Option<f64>,
+    /// Color for low value (default: "yellow")
+    #[serde(default = "default_low_color")]
+    pub low_color: String,
+}
+
+fn default_high_temp_color() -> String {
+    "red".to_string()
+}
+
+fn default_low_temp_color() -> String {
+    "blue".to_string()
+}
+
+fn default_high_color() -> String {
+    "red".to_string()
+}
+
+fn default_low_color() -> String {
+    "yellow".to_string()
+}
+
+impl Default for ForecastHighlights {
+    fn default() -> Self {
+        Self {
+            temperature: TemperatureHighlights::default(),
+            humidity: ValueHighlights::default(),
+            wind_speed: ValueHighlights::default(),
+            precipitation: ValueHighlights::default(),
+        }
+    }
+}
+
+impl Default for TemperatureHighlights {
+    fn default() -> Self {
+        Self {
+            high: Some(30.0), // 30°C / 86°F
+            high_color: "red".to_string(),
+            low: Some(0.0),   // 0°C / 32°F
+            low_color: "blue".to_string(),
+        }
+    }
+}
+
+impl Default for ValueHighlights {
+    fn default() -> Self {
+        Self {
+            high: None,
+            high_color: "red".to_string(),
+            low: None,
+            low_color: "yellow".to_string(),
         }
     }
 }
