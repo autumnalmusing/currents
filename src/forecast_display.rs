@@ -5,11 +5,25 @@ pub struct ForecastFormatter;
 impl ForecastFormatter {
     pub fn format(forecast: &ForecastData) -> String {
         let mut output = String::new();
-        let col_width = 16;
+        
+        // Get terminal width, default to 80 if unable to detect
+        let term_width = terminal_size::terminal_size()
+            .map(|(w, _)| w.0 as usize)
+            .unwrap_or(80);
+        
+        // Calculate column width based on terminal width and number of days
+        // Leave space for separators (1 space between columns)
+        let num_days = forecast.days.len();
+        let separator_space = num_days.saturating_sub(1); // spaces between columns
+        let available_width = term_width.saturating_sub(separator_space);
+        let col_width = (available_width / num_days).max(16).min(24); // min 16, max 24
+        
+        // Calculate description max length based on column width
+        let desc_max_len = col_width.saturating_sub(4); // Account for padding
         
         // Header
         output.push_str(&format!("\n📍 5-Day Forecast for {}\n", forecast.location));
-        output.push_str(&format!("{}\n\n", "═".repeat(col_width * 5 + 4)));
+        output.push_str(&format!("{}\n\n", "═".repeat(term_width.min(col_width * num_days + separator_space))));
         
         // Day names row
         let day_names: Vec<String> = forecast.days.iter()
@@ -25,7 +39,7 @@ impl ForecastFormatter {
         
         // Description row
         let descriptions: Vec<String> = forecast.days.iter()
-            .map(|day| Self::pad_center(&Self::truncate(&day.description, 14), col_width))
+            .map(|day| Self::pad_center(&Self::truncate(&day.description, desc_max_len), col_width))
             .collect();
         output.push_str(&format!("{}\n\n", descriptions.join(" ")));
         
@@ -59,7 +73,7 @@ impl ForecastFormatter {
             .collect();
         output.push_str(&format!("{}\n", precip.join(" ")));
         
-        output.push_str(&format!("\n{}\n", "═".repeat(col_width * 5 + 4)));
+        output.push_str(&format!("\n{}\n", "═".repeat(term_width.min(col_width * num_days + separator_space))));
         output
     }
     

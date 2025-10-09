@@ -184,4 +184,11 @@ The project is structured as follows:
 
 ## License
 
-MIT License
+This project is licensed under the [Peer Production License](https://wiki.p2pfoundation.net/Peer_Production_License).
+
+The Peer Production License is a copyfarleft license that allows:
+- ✅ Use, modification, and distribution by worker-owned cooperatives
+- ✅ Use by non-profit organizations and individuals
+- ❌ Commercial use by traditional for-profit corporations that employ wage labor
+
+This ensures the software remains a commons for those who contribute to the commons.
