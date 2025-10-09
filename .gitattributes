@@ -1,0 +1,12 @@
+# Tell GitHub's linguist this is a Rust project
+*.rs linguist-detectable=true
+*.toml linguist-detectable=true
+
+# Explicitly mark certain files as documentation/config
+*.md linguist-documentation
+*.sh linguist-detectable=false
+
+# Make sure d files (Makefile dependencies) are not counted
+# This shouldn't be needed anymore since target/ is ignored, but just in case
+*.d linguist-generated=true
+
