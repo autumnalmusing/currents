@@ -1,6 +1,6 @@
-use currents::forecast_display::ForecastFormatter;
-use currents::weather::{ForecastData, ForecastDay};
-use currents::config::{ForecastHighlights, ForecastDisplayConfig, TemperatureHighlights, ValueHighlights};
+use currents_forecast::display::ForecastFormatter;
+use currents_core::{ForecastData, ForecastDay};
+use currents_forecast::config::{ForecastHighlights, ForecastDisplayConfig, TemperatureHighlights, ValueHighlights};
 use chrono::{Utc, Duration};
 
 fn create_test_forecast() -> ForecastData {
@@ -24,6 +24,7 @@ fn create_test_forecast() -> ForecastData {
                 feels_like_max: None,
                 cloud_cover: Some(20.0),
                 aqi: Some(1.0), // Good air quality
+                wind_gust: Some(8.0),
             },
             ForecastDay {
                 date: now + Duration::days(1),
@@ -41,6 +42,7 @@ fn create_test_forecast() -> ForecastData {
                 feels_like_max: None,
                 cloud_cover: Some(90.0),
                 aqi: Some(4.0), // Unhealthy air quality
+                wind_gust: Some(25.0),
             },
             ForecastDay {
                 date: now + Duration::days(2),
@@ -58,6 +60,7 @@ fn create_test_forecast() -> ForecastData {
                 feels_like_max: None,
                 cloud_cover: Some(100.0),
                 aqi: Some(2.0), // Moderate air quality
+                wind_gust: Some(3.0),
             },
         ],
     }

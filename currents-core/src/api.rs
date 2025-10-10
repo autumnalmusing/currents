@@ -1,51 +1,10 @@
 use anyhow::{Result, Context};
 use reqwest::Client;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::time::Duration;
 use tracing::info;
 use crate::api_stats::ApiStatsTracker;
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct WeatherData {
-    pub temperature: f64,
-    pub humidity: f64,
-    pub wind_speed: f64,
-    pub description: String,
-    pub precipitation: Option<PrecipitationData>,
-    pub timestamp: chrono::DateTime<chrono::Utc>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PrecipitationData {
-    pub intensity: String,
-    pub probability: f64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ForecastDay {
-    pub date: chrono::DateTime<chrono::Utc>,
-    pub temp_min: f64,
-    pub temp_max: f64,
-    pub humidity: f64,
-    pub wind_speed: f64,
-    pub wind_direction: Option<String>, // Wind direction (e.g., "N", "NE", "E", etc.)
-    pub description: String,
-    pub precipitation_probability: f64,
-    pub pressure: Option<f64>,        // Atmospheric pressure in hPa/mb
-    pub visibility: Option<f64>,      // Visibility in km
-    pub uv_index: Option<f64>,        // UV index
-    pub feels_like_min: Option<f64>,  // Feels like temperature min
-    pub feels_like_max: Option<f64>,  // Feels like temperature max
-    pub cloud_cover: Option<f64>,     // Cloud cover percentage
-    pub aqi: Option<f64>,              // Air Quality Index (US EPA standard)
-    pub wind_gust: Option<f64>,        // Maximum wind gust speed in m/s
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ForecastData {
-    pub location: String,
-    pub days: Vec<ForecastDay>,
-}
+use crate::types::{WeatherData, PrecipitationData, ForecastDay, ForecastData};
 
 #[derive(Debug, Clone)]
 pub struct WeatherFetcher {
@@ -331,6 +290,11 @@ impl WeatherFetcher {
                 let avg_wind_deg = items.iter().map(|i| i.wind.deg.unwrap_or(0.0)).sum::<f64>() / items.len() as f64;
                 let wind_direction = Self::degrees_to_compass(avg_wind_deg);
                 
+                // Calculate maximum wind gust
+                let max_gust = items.iter()
+                    .filter_map(|i| i.wind.gust)
+                    .fold(0.0f64, f64::max);
+                
                 days.push(ForecastDay {
                     date,
                     temp_min,
@@ -347,6 +311,7 @@ impl WeatherFetcher {
                     feels_like_max: None,
                     cloud_cover: Some(avg_cloud_cover),
                     aqi: None, // Not available in OpenWeatherMap forecast
+                    wind_gust: if max_gust > 0.0 { Some(max_gust) } else { None },
                 });
             }
         }
@@ -411,6 +376,7 @@ impl WeatherFetcher {
                     feels_like_max: None,
                     cloud_cover: day.day.cloud_cover,
                     aqi: day.day.air_quality.as_ref().and_then(|aq| aq.us_epa_index),
+                    wind_gust: day.day.maxwind_gust_kph.map(|g| g / 3.6), // Convert km/h to m/s
                 }
             })
             .collect();
@@ -532,6 +498,7 @@ struct DayData {
     uv: Option<f64>,
     cloud_cover: Option<f64>,
     wind_dir: Option<String>, // Wind direction (e.g., "N", "NE", etc.)
+    maxwind_gust_kph: Option<f64>, // Maximum wind gust
     air_quality: Option<AirQuality>,
 }
 

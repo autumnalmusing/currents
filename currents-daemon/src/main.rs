@@ -2,8 +2,13 @@ use anyhow::Result;
 use clap::Parser;
 use std::path::PathBuf;
 use tracing::info;
-use currents::config::Config;
-use currents::daemon::WeatherAlertDaemon;
+mod config;
+mod alerts;
+mod notifications;
+mod daemon;
+
+use config::Config;
+use daemon::WeatherAlertDaemon;
 
 #[derive(Parser)]
 #[command(name = "currents")]
@@ -63,8 +68,8 @@ async fn main() -> Result<()> {
     // Handle simple test notification (no config required)
     if args.test_simple {
         info!("Sending simple test notification...");
-        use currents::notifications::NotificationManager;
-        use currents::config::NotificationConfig;
+        use notifications::NotificationManager;
+        use config::NotificationConfig;
         
         let notif_config = NotificationConfig {
             urgency: "normal".to_string(),
@@ -80,7 +85,7 @@ async fn main() -> Result<()> {
     
     // Handle API stats output
     if args.api_stats {
-        use currents::api_stats::ApiStatsTracker;
+        use currents_core::ApiStatsTracker;
         
         match ApiStatsTracker::with_default_path() {
             Ok(tracker) => {
@@ -104,49 +109,16 @@ async fn main() -> Result<()> {
 
     // Handle forecast display
     if args.forecast {
-        use currents::weather::WeatherFetcher;
-        use currents::forecast_display::ForecastFormatter;
-        use currents::api_stats::ApiStatsTracker;
-        
-        let config = Config::load(&config_path)?;
-        
-        // Check remaining API calls
-        if let Ok(tracker) = ApiStatsTracker::with_default_path() {
-            if let Ok(remaining) = tracker.remaining_calls(config.weather.api_daily_limit) {
-                if remaining == 0 {
-                    eprintln!("Error: Daily API limit ({} calls) reached.", config.weather.api_daily_limit);
-                    eprintln!("Limit will reset at midnight UTC.");
-                    std::process::exit(1);
-                }
-                eprintln!("API calls remaining today: {}/{}\n", remaining, config.weather.api_daily_limit);
-            }
-        }
-        
-        let weather_fetcher = WeatherFetcher::new(
-            config.weather.api_key.clone(),
-            config.weather.location.clone(),
-            config.weather.units.clone(),
-            config.weather.provider.clone(),
-            config.weather.api_daily_limit,
-        );
-        
-        match weather_fetcher.fetch_forecast().await {
-            Ok(forecast) => {
-                let formatted = ForecastFormatter::format(&forecast, &config.forecast_highlights, &config.forecast_display);
-                println!("{}", formatted);
-                return Ok(());
-            }
-            Err(e) => {
-                eprintln!("Failed to fetch forecast: {}", e);
-                std::process::exit(1);
-            }
-        }
+        eprintln!("Error: Forecast display has been moved to a separate tool.");
+        eprintln!("Please use: cargo install currents-forecast");
+        eprintln!("Then run: currents-forecast");
+        std::process::exit(1);
     }
     
     // If only printing cached data, try reading config for cache path, but fall back to default
     if args.output {
         // Try load config to get cache path; if it fails, use default CacheConfig
-        let config = Config::load(&config_path).ok();
+        let config = Config::load_from_file().ok();
         let cache_path = config
             .as_ref()
             .map(|c| c.cache.path.clone())
@@ -167,7 +139,7 @@ async fn main() -> Result<()> {
     }
 
     // Load configuration
-    let config = Config::load(&config_path)?;
+    let config = Config::load_from_file()?;
     
     // Handle test notifications
     if args.test_notification {

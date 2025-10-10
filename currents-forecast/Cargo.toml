@@ -1,0 +1,30 @@
+[package]
+name = "currents-forecast"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license-file.workspace = true
+
+description = "Forecast display tool for the Currents weather system"
+
+[[bin]]
+name = "currents-forecast"
+path = "src/main.rs"
+
+[dependencies]
+currents-core = { workspace = true }
+
+tokio = { workspace = true }
+serde = { workspace = true }
+toml = { workspace = true }
+anyhow = { workspace = true }
+chrono = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+clap = { workspace = true }
+tabled = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+

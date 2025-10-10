@@ -1,17 +1,37 @@
-# Currents, a weather alert daemon
+# Currents - Modular Weather Monitoring System
 
-A fast, lightweight daemon written in Rust that monitors weather conditions and sends desktop notifications when specific weather patterns occur.
+A fast, lightweight weather monitoring system written in Rust with a modular plugin architecture. The core daemon monitors weather conditions and sends desktop notifications based on custom alert rules.
+
+## Architecture
+
+Currents is built as a Cargo workspace with independent, composable crates:
+
+- **`currents-core`** - Shared library with API clients and data types
+- **`currents-daemon`** - Lightweight background daemon for weather alerts
+- **`currents-forecast`** - Standalone forecast display tool
+- **`currents-history`** (planned) - Historical weather tracking and analysis
+
+Each tool can be installed independently based on your needs.
 
 ## Features
 
-- **Fast and Efficient**: Built with Rust for excellent performance and memory safety
-- **Flexible Configuration**: Supports both TOML and KDL formats for human-readable configuration
+### Core Daemon (`currents`)
+- **Lightweight Monitoring**: Efficient background process with minimal resource usage
+- **Weather Alerts**: Custom notification rules based on weather conditions
+- **API Rate Limiting**: Automatic tracking to stay under free tier limits (prevents charges)
+- **Cache for Waybar**: Exports weather data for status bar integration
 - **Multiple Weather Providers**: Supports OpenWeatherMap and WeatherAPI
-- **Rich Alert Conditions**: Temperature, humidity, wind speed, precipitation, and description-based alerts
-- **5-Day Forecast**: Beautiful, emoji-rich forecast display with detailed weather information
-- **API Rate Limiting**: Automatic tracking to ensure you stay under 1000 calls/day (prevents charges)
-- **System Integration**: systemd service with proper logging and resource limits
-- **Desktop Notifications**: Uses libnotify for native Linux notifications
+
+### Forecast Tool (`currents-forecast`)
+- **5-Day Weather Forecast**: Beautiful formatted table with comprehensive data
+- **Configurable Display**: Show/hide columns (pressure, UV, AQI, visibility, etc.)
+- **Color Highlighting**: Threshold-based highlighting with custom colors
+- **Independent**: Runs standalone, doesn't require daemon
+
+### Shared Features
+- **Flexible Configuration**: Single TOML config file shared across all tools
+- **Rich Data**: Temperature, humidity, wind, pressure, UV, AQI, cloud cover, and more
+- **Provider Support**: OpenWeatherMap and WeatherAPI with automatic field mapping
 
 ## Installation
 
@@ -77,40 +97,40 @@ The service will automatically:
 
 ### Option 2: Install from source
 
-1. **Install the binary**:
-   ```bash
-   cargo install --path .
-   ```
+**Install all tools:**
+```bash
+# Build everything
+cargo build --release --workspace
 
-2. **Install the systemd service** (installs but doesn't start):
-   ```bash
-   ./install-service.sh
-   ```
+# Install daemon (required for alerts)
+cargo install --path currents-daemon
 
-3. **Configure the service**:
-   - Copy `config.toml` to `~/.config/currents/config.toml` (or use `config.kdl.example` as a template for KDL format)
-   - Update the configuration with your API key and preferences
+# Install forecast tool (optional)
+cargo install --path currents-forecast
+```
 
-4. **Start the service** (when ready):
-   ```bash
-   sudo systemctl enable currents@$USER
-   sudo systemctl start currents@$USER
-   ```
+**Install only what you need:**
+```bash
+# Just the daemon (minimal, alerts only)
+cargo install --path currents-daemon
 
-### Option 2: Manual installation
+# Just the forecast tool (no daemon)
+cargo install --path currents-forecast
+```
 
-1. **Build the project**:
-   ```bash
-   cargo build --release
-   ```
+**Setup the daemon service:**
+```bash
+# Install systemd service
+./install-service.sh
 
-2. **Install the systemd service**:
-   ```bash
-   sudo cp currents.service /etc/systemd/system/
-   sudo systemctl daemon-reload
-   ```
+# Configure
+cp config.toml ~/.config/currents/config.toml
+# Edit with your API key and preferences
 
-3. **Configure and start** (same as Option 1, steps 3-4)
+# Start the daemon
+sudo systemctl enable currents@$USER
+sudo systemctl start currents@$USER
+```
 
 ## Configuration
 
@@ -177,95 +197,171 @@ max = 5.0
 
 ## Usage
 
-### Running in Foreground (for testing)
-```bash
-./target/release/currents --foreground
-```
-
-### Testing Notifications
-
-You can test your notification setup with several options:
+### Daemon Commands
 
 ```bash
-# Simple test (no config file required)
-./target/release/currents --test-simple
+# Run in foreground (for testing)
+currents --foreground
 
-# Test with your configuration
-./target/release/currents --config config.toml --test-notification
+# Test notifications
+currents --test-simple                                 # No config required
+currents --test-notification                           # Test with your config
+currents --test-custom "Title" "Message"              # Custom notification
 
-# Custom test notification
-./target/release/currents --config config.toml --test-custom "My Test" "This is a custom message"
+# Check API usage
+currents --api-stats                                   # Shows calls made today
+currents --output                                      # View cached weather data
+
+# Service management
+systemctl --user status currents                       # Check daemon status
+journalctl --user -u currents -f                      # View logs
+systemctl --user restart currents                     # Restart daemon
 ```
 
-### Weather Forecast
+### Forecast Display
 
-Display a beautiful 5-day forecast directly in your terminal:
+The forecast tool is a separate binary:
 
 ```bash
 # Show 5-day forecast
-./target/release/currents --forecast
+currents-forecast
 
-# With custom config path
-./target/release/currents --config ~/.config/currents/config.toml --forecast
+# Limit number of days
+currents-forecast --days 3
+
+# Help
+currents-forecast --help
 ```
 
-The forecast displays:
-- Daily high and low temperatures
-- Weather conditions with emoji icons
-- Humidity, wind speed, and precipitation probability
-- Automatically checks API rate limits before making requests
+**Forecast Features:**
+- Daily high/low temperatures, humidity, wind speed
+- Pressure, visibility, UV index, cloud cover (configurable)
+- Air Quality Index (WeatherAPI only)
+- Wind direction and gusts
+- Color highlighting based on thresholds
+- Automatically checks API rate limits
 
-### API Usage Monitoring
+**Example output:**
+```
+API calls remaining today: 985/1000
 
-Keep track of your API usage to stay under the free tier limit (1000 calls/day):
-
-```bash
-# Check current day's API call count
-./target/release/currents --api-stats
-
-# View cached weather data (no API call)
-./target/release/currents --output
+╭─────────┬────────────────┬─────────┬──────────┬────────┬────────╮
+│  Date   │    Weather     │  Temp   │ Humidity │  Wind  │ Precip │
+├─────────┼────────────────┼─────────┼──────────┼────────┼────────┤
+│ Fri 10/10│ scattered clouds│ 11°-18° │   72%    │ 2.0m/s │   0%   │
+│ Sat 10/11│   light rain   │ 12°-16° │   85%    │ 4.5m/s │  60%   │
+│ Sun 10/12│   clear sky    │ 10°-19° │   65%    │ 1.8m/s │   5%   │
+╰─────────┴────────────────┴─────────┴──────────┴────────┴────────╯
 ```
 
-**Rate Limiting**: The daemon automatically prevents API calls if you've reached 1000 calls for the day (UTC). This ensures you never incur charges from weather providers. The limit resets at midnight UTC.
+### Configuration Display Options
 
-### Service Management
-```bash
-# Check status
-sudo systemctl status currents@$USER
+Control which columns appear in the forecast:
 
-# View logs
-sudo journalctl -u currents@$USER -f
-
-# Restart service
-sudo systemctl restart currents@$USER
+```toml
+[forecast_display]
+show_date = true
+show_weather = true
+show_temp = true
+show_humidity = true
+show_wind = true
+show_precip = true
+show_pressure = false      # Atmospheric pressure (optional)
+show_visibility = false    # Visibility distance (optional)
+show_uv = false           # UV index (optional)
+show_clouds = false       # Cloud coverage (optional)
+show_wind_dir = false     # Wind direction (optional)
+show_aqi = false          # Air quality index (optional)
 ```
 
 ## Development
 
-The project is structured as follows:
+### Workspace Structure
 
-- `src/main.rs` - Entry point and CLI handling
-- `src/config.rs` - Configuration parsing with KDL support
-- `src/weather.rs` - Weather data fetching from various APIs (current + forecast)
-- `src/alerts.rs` - Alert condition matching engine
-- `src/notifications.rs` - Desktop notification system
-- `src/daemon.rs` - Main daemon logic and polling
-- `src/api_stats.rs` - API call tracking and rate limiting
-- `src/forecast_display.rs` - Pretty forecast formatting with emojis
-- `currents.service` - systemd service template
-- `install-service.sh` - Script to install systemd service (installs but doesn't start)
+```
+currents/
+├── Cargo.toml                    # Workspace definition
+├── currents-core/                # Shared library
+│   ├── src/
+│   │   ├── lib.rs               # Public API
+│   │   ├── types.rs             # WeatherData, ForecastDay, etc.
+│   │   ├── api.rs               # API clients (OpenWeatherMap, WeatherAPI)
+│   │   ├── api_stats.rs         # Rate limiting
+│   │   └── config.rs            # Shared config types
+│   └── Cargo.toml
+│
+├── currents-daemon/              # Alert daemon
+│   ├── src/
+│   │   ├── main.rs              # Daemon binary entry point
+│   │   ├── lib.rs               # Library for tests
+│   │   ├── config.rs            # Daemon-specific config
+│   │   ├── alerts.rs            # Alert engine
+│   │   ├── notifications.rs     # Desktop notifications
+│   │   └── daemon.rs            # Polling loop
+│   ├── tests/
+│   └── Cargo.toml
+│
+├── currents-forecast/            # Forecast display tool
+│   ├── src/
+│   │   ├── main.rs              # Forecast binary entry point
+│   │   ├── lib.rs               # Library for tests
+│   │   ├── config.rs            # Forecast-specific config
+│   │   └── display.rs           # Table formatting & colors
+│   ├── tests/
+│   └── Cargo.toml
+│
+└── config.toml                   # Shared config file (all tools read this)
+```
+
+### Building
+
+```bash
+# Build all crates
+cargo build --workspace
+
+# Build specific crate
+cargo build -p currents-daemon
+cargo build -p currents-forecast
+cargo build -p currents-core
+
+# Run tests
+cargo test --workspace
+cargo test -p currents-daemon
+cargo test -p currents-forecast
+
+# Run specific binary
+cargo run -p currents-daemon -- --foreground
+cargo run -p currents-forecast -- --days 3
+```
+
+### Adding New Tools
+
+To add a new tool (e.g., `currents-history`):
+
+1. Add to workspace members in root `Cargo.toml`
+2. Create `currents-history/` directory with its own `Cargo.toml`
+3. Add `currents-core` as dependency
+4. Implement tool-specific config structures
+5. Read from shared `~/.config/currents/config.toml`
+
+All tools remain fully independent while sharing core types and API clients.
 
 ## Dependencies
 
+### Core Library
+- `reqwest` - HTTP client with rustls
+- `serde` / `serde_json` - Serialization
+- `chrono` - Date/time handling
 - `tokio` - Async runtime
-- `reqwest` - HTTP client for weather APIs (with rustls-tls)
-- `toml` - TOML configuration format parsing
-- `notify-rust` - Desktop notifications
-- `tracing` - Structured logging
-- `serde` - Serialization
 - `anyhow` - Error handling
-- `clap` - CLI argument parsing
+
+### Daemon-Specific
+- `notify-rust` - Desktop notifications
+- `tracing` / `tracing-subscriber` - Logging
+
+### Forecast-Specific
+- `tabled` - Beautiful terminal tables
+- `clap` - CLI arguments
 
 ## License
 

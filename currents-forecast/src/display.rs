@@ -1,4 +1,4 @@
-use crate::weather::ForecastData;
+use currents_core::ForecastData;
 use crate::config::{ForecastHighlights, ForecastDisplayConfig};
 use tabled::{Table, settings::{Style, Alignment, Modify, object::Columns, Color}, builder::Builder};
 

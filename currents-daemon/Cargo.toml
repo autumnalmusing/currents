@@ -1,0 +1,35 @@
+[package]
+name = "currents-daemon"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license-file.workspace = true
+
+description = "A daemon for monitoring weather conditions and sending desktop notifications based on alert rules"
+
+[lib]
+name = "currents_daemon"
+path = "src/lib.rs"
+
+[[bin]]
+name = "currents"
+path = "src/main.rs"
+
+[dependencies]
+currents-core = { workspace = true }
+
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+toml = { workspace = true }
+anyhow = { workspace = true }
+chrono = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+notify-rust = { workspace = true }
+clap = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+

@@ -35,9 +35,6 @@ tabled = { version = "0.17", features = ["ansi"] }
 # Dev dependencies
 tempfile = "3.14"
 
-# Utility crates
-dirs = "5.0"
-
 # Inter-workspace dependencies
 currents-core = { path = "currents-core" }
 
