@@ -61,6 +61,29 @@
       #   high = 70.0;         # percentage
       #   highColor = "#89b4fa";
       # };
+      
+      # New: Highlight pressure, visibility, UV, clouds, AQI
+      # pressure.high = 1020.0;   # High pressure system
+      # visibility.low = 1.0;     # Poor visibility (< 1km)
+      # uvIndex.high = 8.0;       # Dangerous UV levels
+      # aqi.high = 3.0;           # Unhealthy air quality
+    };
+    
+    # Optional: Customize forecast display columns
+    forecastDisplay = {
+      showDate = true;
+      showWeather = true;
+      showTemp = true;
+      showHumidity = true;
+      showWind = true;
+      showPrecip = true;
+      # Optional columns (disabled by default)
+      showPressure = false;      # Atmospheric pressure
+      showVisibility = false;    # Visibility distance
+      showUv = false;           # UV index
+      showClouds = false;       # Cloud coverage %
+      showWindDir = false;      # Wind compass direction
+      showAqi = false;          # Air quality index
     };
     
     # Alert rules

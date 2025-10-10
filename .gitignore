@@ -4,6 +4,11 @@ Cargo.lock
 *.swo
 .envrc
 .direnv
+COMPLETE_REFACTORING_SUMMARY.md
+WORKSPACE_SUMMARY.md
+WORKSPACE_MIGRATION.md
+TESTING.md
+RECENT_WORK.md
 
 # Old structure (preserved for reference)
 /src/

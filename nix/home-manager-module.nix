@@ -15,6 +15,15 @@ let
     then lib.removeSuffix "\n" (builtins.readFile cfg.weather.apiKeyFile)
     else cfg.weather.apiKey;
   
+  # Helper to build highlight config without null values
+  buildHighlight = highlight: 
+    filterAttrs (n: v: v != null) {
+      high = highlight.high;
+      high_color = highlight.highColor;
+      low = highlight.low;
+      low_color = highlight.lowColor;
+    };
+  
   configFile = tomlFormat.generate "config.toml" {
     weather = {
       api_key = apiKey;
@@ -42,30 +51,38 @@ let
     };
     
     forecast_highlights = {
-      temperature = {
-        high = cfg.forecastHighlights.temperature.high;
-        high_color = cfg.forecastHighlights.temperature.highColor;
-        low = cfg.forecastHighlights.temperature.low;
-        low_color = cfg.forecastHighlights.temperature.lowColor;
-      };
-      humidity = mkIf (cfg.forecastHighlights.humidity.high != null || cfg.forecastHighlights.humidity.low != null) {
-        high = cfg.forecastHighlights.humidity.high;
-        high_color = cfg.forecastHighlights.humidity.highColor;
-        low = cfg.forecastHighlights.humidity.low;
-        low_color = cfg.forecastHighlights.humidity.lowColor;
-      };
-      wind_speed = mkIf (cfg.forecastHighlights.windSpeed.high != null || cfg.forecastHighlights.windSpeed.low != null) {
-        high = cfg.forecastHighlights.windSpeed.high;
-        high_color = cfg.forecastHighlights.windSpeed.highColor;
-        low = cfg.forecastHighlights.windSpeed.low;
-        low_color = cfg.forecastHighlights.windSpeed.lowColor;
-      };
-      precipitation = mkIf (cfg.forecastHighlights.precipitation.high != null || cfg.forecastHighlights.precipitation.low != null) {
-        high = cfg.forecastHighlights.precipitation.high;
-        high_color = cfg.forecastHighlights.precipitation.highColor;
-        low = cfg.forecastHighlights.precipitation.low;
-        low_color = cfg.forecastHighlights.precipitation.lowColor;
-      };
+      temperature = buildHighlight cfg.forecastHighlights.temperature;
+    } // optionalAttrs (cfg.forecastHighlights.humidity.high != null || cfg.forecastHighlights.humidity.low != null) {
+      humidity = buildHighlight cfg.forecastHighlights.humidity;
+    } // optionalAttrs (cfg.forecastHighlights.windSpeed.high != null || cfg.forecastHighlights.windSpeed.low != null) {
+      wind_speed = buildHighlight cfg.forecastHighlights.windSpeed;
+    } // optionalAttrs (cfg.forecastHighlights.precipitation.high != null || cfg.forecastHighlights.precipitation.low != null) {
+      precipitation = buildHighlight cfg.forecastHighlights.precipitation;
+    } // optionalAttrs (cfg.forecastHighlights.pressure.high != null || cfg.forecastHighlights.pressure.low != null) {
+      pressure = buildHighlight cfg.forecastHighlights.pressure;
+    } // optionalAttrs (cfg.forecastHighlights.visibility.high != null || cfg.forecastHighlights.visibility.low != null) {
+      visibility = buildHighlight cfg.forecastHighlights.visibility;
+    } // optionalAttrs (cfg.forecastHighlights.uvIndex.high != null || cfg.forecastHighlights.uvIndex.low != null) {
+      uv_index = buildHighlight cfg.forecastHighlights.uvIndex;
+    } // optionalAttrs (cfg.forecastHighlights.cloudCover.high != null || cfg.forecastHighlights.cloudCover.low != null) {
+      cloud_cover = buildHighlight cfg.forecastHighlights.cloudCover;
+    } // optionalAttrs (cfg.forecastHighlights.aqi.high != null || cfg.forecastHighlights.aqi.low != null) {
+      aqi = buildHighlight cfg.forecastHighlights.aqi;
+    };
+    
+    forecast_display = {
+      show_date = cfg.forecastDisplay.showDate;
+      show_weather = cfg.forecastDisplay.showWeather;
+      show_temp = cfg.forecastDisplay.showTemp;
+      show_humidity = cfg.forecastDisplay.showHumidity;
+      show_wind = cfg.forecastDisplay.showWind;
+      show_precip = cfg.forecastDisplay.showPrecip;
+      show_pressure = cfg.forecastDisplay.showPressure;
+      show_visibility = cfg.forecastDisplay.showVisibility;
+      show_uv = cfg.forecastDisplay.showUv;
+      show_clouds = cfg.forecastDisplay.showClouds;
+      show_wind_dir = cfg.forecastDisplay.showWindDir;
+      show_aqi = cfg.forecastDisplay.showAqi;
     };
     
     alerts = map (alert: {
@@ -285,6 +302,185 @@ in {
           default = "green";
           description = "Color for low precipitation probability";
         };
+      };
+      
+      # New fields added in workspace refactoring
+      pressure = {
+        high = mkOption {
+          type = types.nullOr types.float;
+          default = null;
+          description = "Pressure threshold for highlighting (hPa/mb)";
+        };
+        highColor = mkOption {
+          type = types.str;
+          default = "red";
+          description = "Color for high pressure";
+        };
+        low = mkOption {
+          type = types.nullOr types.float;
+          default = null;
+          description = "Low pressure threshold";
+        };
+        lowColor = mkOption {
+          type = types.str;
+          default = "yellow";
+          description = "Color for low pressure";
+        };
+      };
+      
+      visibility = {
+        high = mkOption {
+          type = types.nullOr types.float;
+          default = null;
+          description = "Visibility threshold for highlighting (km)";
+        };
+        highColor = mkOption {
+          type = types.str;
+          default = "red";
+          description = "Color for high visibility";
+        };
+        low = mkOption {
+          type = types.nullOr types.float;
+          default = null;
+          description = "Low visibility threshold";
+        };
+        lowColor = mkOption {
+          type = types.str;
+          default = "yellow";
+          description = "Color for low visibility";
+        };
+      };
+      
+      uvIndex = {
+        high = mkOption {
+          type = types.nullOr types.float;
+          default = null;
+          description = "UV index threshold for highlighting";
+        };
+        highColor = mkOption {
+          type = types.str;
+          default = "red";
+          description = "Color for high UV";
+        };
+        low = mkOption {
+          type = types.nullOr types.float;
+          default = null;
+          description = "Low UV threshold";
+        };
+        lowColor = mkOption {
+          type = types.str;
+          default = "yellow";
+          description = "Color for low UV";
+        };
+      };
+      
+      cloudCover = {
+        high = mkOption {
+          type = types.nullOr types.float;
+          default = null;
+          description = "Cloud cover threshold for highlighting (percentage)";
+        };
+        highColor = mkOption {
+          type = types.str;
+          default = "red";
+          description = "Color for high cloud cover";
+        };
+        low = mkOption {
+          type = types.nullOr types.float;
+          default = null;
+          description = "Low cloud cover threshold";
+        };
+        lowColor = mkOption {
+          type = types.str;
+          default = "yellow";
+          description = "Color for low cloud cover";
+        };
+      };
+      
+      aqi = {
+        high = mkOption {
+          type = types.nullOr types.float;
+          default = null;
+          description = "Air Quality Index threshold (US EPA 1-6 scale)";
+        };
+        highColor = mkOption {
+          type = types.str;
+          default = "red";
+          description = "Color for high AQI (poor air quality)";
+        };
+        low = mkOption {
+          type = types.nullOr types.float;
+          default = null;
+          description = "Low AQI threshold (good air quality)";
+        };
+        lowColor = mkOption {
+          type = types.str;
+          default = "green";
+          description = "Color for low AQI";
+        };
+      };
+    };
+    
+    forecastDisplay = {
+      showDate = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Show date column in forecast";
+      };
+      showWeather = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Show weather description column";
+      };
+      showTemp = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Show temperature range column";
+      };
+      showHumidity = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Show humidity column";
+      };
+      showWind = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Show wind speed column";
+      };
+      showPrecip = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Show precipitation probability column";
+      };
+      showPressure = mkOption {
+        type = types.bool;
+        default = false;
+        description = "Show atmospheric pressure column";
+      };
+      showVisibility = mkOption {
+        type = types.bool;
+        default = false;
+        description = "Show visibility column";
+      };
+      showUv = mkOption {
+        type = types.bool;
+        default = false;
+        description = "Show UV index column";
+      };
+      showClouds = mkOption {
+        type = types.bool;
+        default = false;
+        description = "Show cloud cover column";
+      };
+      showWindDir = mkOption {
+        type = types.bool;
+        default = false;
+        description = "Show wind direction column";
+      };
+      showAqi = mkOption {
+        type = types.bool;
+        default = false;
+        description = "Show air quality index column";
       };
     };
     
