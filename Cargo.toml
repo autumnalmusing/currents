@@ -34,5 +34,9 @@ tabled = { version = "0.17", features = ["ansi"] }
 
 # Dev dependencies
 tempfile = "3.14"
-[workspace.metadata.marker.lints]
-marker_lints = "0.4.3"
+
+# Utility crates
+dirs = "5.0"
+
+# Inter-workspace dependencies
+currents-core = { path = "currents-core" }
