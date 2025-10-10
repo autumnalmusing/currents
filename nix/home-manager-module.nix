@@ -100,8 +100,15 @@ in {
     
     package = mkOption {
       type = types.package;
-      default = self.packages.${system}.default;
-      description = "The currents package to use";
+      default = self.packages.${system}.currents-daemon;
+      description = ''
+        The currents package to use.
+        Options:
+        - currents-daemon (default) - Just the daemon for alerts
+        - currents-forecast - Just the forecast display tool
+        - currents-full - Both daemon and forecast
+      '';
+      example = literalExpression "inputs.currents.packages.\${system}.currents-full";
     };
     
     weather = {
