@@ -17,6 +17,8 @@ path = "src/main.rs"
 
 [dependencies]
 currents-core = { workspace = true }
+currents-history = { workspace = true }
+currents-storage = { workspace = true }
 
 tokio = { workspace = true }
 serde = { workspace = true }

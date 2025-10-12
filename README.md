@@ -9,7 +9,9 @@ Currents is built as a Cargo workspace with independent, composable crates:
 - **`currents-core`** - Shared library with API clients and data types
 - **`currents-daemon`** - Lightweight background daemon for weather alerts
 - **`currents-forecast`** - Standalone forecast display tool
-- **`currents-history`** (planned) - Historical weather tracking and analysis
+- **`currents-history`** - Historical weather tracking and pattern analysis
+- **`currents-storage`** - Centralized data storage with multi-location support
+- **`currents-orchestrator`** - Multi-location monitoring orchestrator
 
 Each tool can be installed independently based on your needs.
 
@@ -20,6 +22,7 @@ Each tool can be installed independently based on your needs.
 - **Weather Alerts**: Custom notification rules based on weather conditions
 - **API Rate Limiting**: Automatic tracking to stay under free tier limits (prevents charges)
 - **Cache for Waybar**: Exports weather data for status bar integration
+- **Automatic Data Collection**: Optional automatic logging of weather data for historical analysis
 - **Multiple Weather Providers**: Supports OpenWeatherMap and WeatherAPI
 
 ### Forecast Tool (`currents-forecast`)
@@ -27,6 +30,27 @@ Each tool can be installed independently based on your needs.
 - **Configurable Display**: Show/hide columns (pressure, UV, AQI, visibility, etc.)
 - **Color Highlighting**: Threshold-based highlighting with custom colors
 - **Independent**: Runs standalone, doesn't require daemon
+
+### History Tool (`currents-history`)
+- **Weather History Tracking**: SQLite database storage for historical weather data
+- **Pattern Analysis**: Trend detection and statistical analysis of weather patterns
+- **Data Export**: Export historical data in JSON or CSV formats
+- **Trend Visualization**: ASCII charts for weather trend visualization
+- **Comparison Tools**: Compare current weather to historical periods
+- **Seasonal Analysis**: Identify seasonal patterns and variations
+
+### Orchestrator (`currents-orchestrator`)
+- **Multi-Location Monitoring**: Monitor weather across multiple cities/regions simultaneously
+- **Cross-Location Analysis**: Detect correlations and patterns between locations
+- **Independent Collectors**: Each location runs its own collector process
+- **Health Monitoring**: Automatic recovery and error handling for collectors
+- **Centralized Coordination**: Unified management of multiple weather monitoring processes
+
+### Storage (`currents-storage`)
+- **Centralized Data Storage**: Single database with location tagging
+- **Multi-Location Support**: Store and query weather data from multiple locations
+- **Data Migration**: Schema management and database migrations
+- **Efficient Queries**: Optimized data access patterns for historical analysis
 
 ### Shared Features
 - **Flexible Configuration**: Single TOML config file shared across all tools
@@ -41,7 +65,7 @@ If you're using NixOS or home-manager, you can configure currents declaratively:
 
 1. **Add to your flake inputs**:
    ```nix
-   inputs.currents.url = "github:yourusername/currents";
+   inputs.currents.url = "github:autumnalmusing/currents";
    ```
 
 2. **Import the home-manager module**:
@@ -107,6 +131,9 @@ cargo install --path currents-daemon
 
 # Install forecast tool (optional)
 cargo install --path currents-forecast
+
+# Install history tool (optional)
+cargo install --path currents-history
 ```
 
 **Install only what you need:**
@@ -116,6 +143,9 @@ cargo install --path currents-daemon
 
 # Just the forecast tool (no daemon)
 cargo install --path currents-forecast
+
+# Just the history tool (no daemon)
+cargo install --path currents-history
 ```
 
 **Setup the daemon service:**
@@ -134,14 +164,10 @@ sudo systemctl start currents@$USER
 
 ## Configuration
 
-The daemon supports both TOML and KDL configuration formats. The format is automatically detected based on the file extension:
-
-- **TOML format** (`.toml`): Currently fully supported - see `config.toml` for an example
-- **KDL format** (`.kdl`): Planned for future implementation - see `config.kdl.example` for the intended format
+The daemon uses TOML configuration format.
 
 ### Configuration Files
-- `config.toml` - Working TOML configuration example
-- `config.kdl.example` - Planned KDL configuration format (not yet implemented)
+- `config.toml` - TOML configuration example
 
 ### Weather Providers
 
@@ -274,94 +300,78 @@ show_wind_dir = false     # Wind direction (optional)
 show_aqi = false          # Air quality index (optional)
 ```
 
-## Development
+### Weather History Analysis
 
-### Workspace Structure
-
-```
-currents/
-├── Cargo.toml                    # Workspace definition
-├── currents-core/                # Shared library
-│   ├── src/
-│   │   ├── lib.rs               # Public API
-│   │   ├── types.rs             # WeatherData, ForecastDay, etc.
-│   │   ├── api.rs               # API clients (OpenWeatherMap, WeatherAPI)
-│   │   ├── api_stats.rs         # Rate limiting
-│   │   └── config.rs            # Shared config types
-│   └── Cargo.toml
-│
-├── currents-daemon/              # Alert daemon
-│   ├── src/
-│   │   ├── main.rs              # Daemon binary entry point
-│   │   ├── lib.rs               # Library for tests
-│   │   ├── config.rs            # Daemon-specific config
-│   │   ├── alerts.rs            # Alert engine
-│   │   ├── notifications.rs     # Desktop notifications
-│   │   └── daemon.rs            # Polling loop
-│   ├── tests/
-│   └── Cargo.toml
-│
-├── currents-forecast/            # Forecast display tool
-│   ├── src/
-│   │   ├── main.rs              # Forecast binary entry point
-│   │   ├── lib.rs               # Library for tests
-│   │   ├── config.rs            # Forecast-specific config
-│   │   └── display.rs           # Table formatting & colors
-│   ├── tests/
-│   └── Cargo.toml
-│
-└── config.toml                   # Shared config file (all tools read this)
-```
-
-### Building
+The history tool provides comprehensive weather data analysis:
 
 ```bash
-# Build all crates
-cargo build --workspace
+# Show weather history for different time periods
+currents-history history 7d              # Last 7 days
+currents-history history 30d --detailed  # Last 30 days with detailed data
+currents-history history 1y              # Last year
 
-# Build specific crate
-cargo build -p currents-daemon
-cargo build -p currents-forecast
-cargo build -p currents-core
+# Analyze weather patterns and trends
+currents-history analyze temperature 30d # Temperature trends over 30 days
+currents-history analyze humidity 7d     # Humidity analysis
+currents-history analyze wind_speed 90d  # Wind speed patterns
 
-# Run tests
-cargo test --workspace
-cargo test -p currents-daemon
-cargo test -p currents-forecast
+# Compare current weather to historical data
+currents-history compare "last week"     # Compare to last week
+currents-history compare "last month"    # Compare to last month
 
-# Run specific binary
-cargo run -p currents-daemon -- --foreground
-cargo run -p currents-forecast -- --days 3
+# Visualize trends with ASCII charts
+currents-history trend temperature 30d   # Temperature trend chart
+currents-history trend humidity 7d       # Humidity trend chart
+
+# Export historical data
+currents-history export json 30d         # Export as JSON
+currents-history export csv 7d --output weather.csv  # Export as CSV
+
+# Database management
+currents-history stats                   # Show database statistics
+currents-history clean 365              # Keep only last 365 days
 ```
 
-### Adding New Tools
+**History Features:**
+- **SQLite Storage**: Efficient local database for weather data
+- **Pattern Detection**: Automatic identification of weather trends and anomalies
+- **Statistical Analysis**: Mean, min, max, volatility calculations
+- **Seasonal Analysis**: Monthly pattern identification
+- **Data Export**: JSON and CSV export capabilities
+- **ASCII Visualization**: Terminal-based trend charts
+- **Comparison Tools**: Compare current conditions to historical periods
 
-To add a new tool (e.g., `currents-history`):
+**Example Analysis Output:**
+```
+Weather Analysis: temperature
+  Trend: increasing
+  Change: 0.5 per day
+  Volatility: 2.3
+  Average: 18.5
+  Min: 12.0
+  Max: 25.0
+  Data Points: 720
+  Period: 30 days
+```
 
-1. Add to workspace members in root `Cargo.toml`
-2. Create `currents-history/` directory with its own `Cargo.toml`
-3. Add `currents-core` as dependency
-4. Implement tool-specific config structures
-5. Read from shared `~/.config/currents/config.toml`
+### History Configuration
 
-All tools remain fully independent while sharing core types and API clients.
+Enable weather history tracking in your config:
 
-## Dependencies
+```toml
+[history]
+enabled = true
+database_path = "~/.config/currents/weather_history.db"
+max_history_days = 365
+auto_collect = true
+collection_interval = 3600
+enable_compression = true
+compression_threshold = 30
+```
 
-### Core Library
-- `reqwest` - HTTP client with rustls
-- `serde` / `serde_json` - Serialization
-- `chrono` - Date/time handling
-- `tokio` - Async runtime
-- `anyhow` - Error handling
+## Contributing
 
-### Daemon-Specific
-- `notify-rust` - Desktop notifications
-- `tracing` / `tracing-subscriber` - Logging
-
-### Forecast-Specific
-- `tabled` - Beautiful terminal tables
-- `clap` - CLI arguments
+For development information, workspace structure, and contribution guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 

@@ -1,6 +1,7 @@
 use anyhow::{Result, Context};
 use serde::{Deserialize, Serialize};
 use currents_core::{WeatherConfig, CacheConfig};
+use currents_history::HistoryConfig;
 
 /// Main daemon configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -11,6 +12,8 @@ pub struct Config {
     pub polling: PollingConfig,
     #[serde(default)]
     pub cache: CacheConfig,
+    #[serde(default)]
+    pub history: Option<HistoryConfig>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -9,9 +9,39 @@ WORKSPACE_SUMMARY.md
 WORKSPACE_MIGRATION.md
 TESTING.md
 RECENT_WORK.md
+ARCHITECTURE_EVOLUTION_PLAN.md
+PHASE3_SUMMARY.md
+PHASE3_STATUS_REPORT.md
+PHASE2_SUMMARY.md
+PHASE1_SUMMARY.md
+FINAL_SUMMARY.md
+COMPLETE_PHASE3_4_SUMMARY.md
+PHASE4_SUMMARY.md
+PHASE3_STATUS_REPORT.md
+WHATS_NEXT.md
+RECENT_WORK.md
+WORKSPACE_SUMMARY.md
+WORKSPACE_MIGRATION.md
 
 # Old structure (preserved for reference)
 /src/
 /tests/
 Cargo.toml.old
 Cargo.lock.old
+
+# AI-generated summary files (not needed in repository)
+*SUMMARY*.md
+*PHASE*.md
+*WORKSPACE*.md
+*COMPLETE*.md
+*FINAL*.md
+*RECENT*.md
+*ARCHITECTURE*.md
+*WHATS*.md
+*STATUS_REPORT*.md
+
+# Progress tracking (not needed in repository)
+PROGRESS_STATUS.md
+
+# Development history (not needed in repository)
+DEVELOPMENT_HISTORY.md

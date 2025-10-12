@@ -1,0 +1,93 @@
+# Currents Configuration - Advanced Collection Strategies
+# This example shows different weather data collection strategies
+
+[weather]
+api_key = "your-openweathermap-api-key-here"
+location = "London,UK"
+units = "metric"
+provider = "openweathermap"
+api_daily_limit = 1000
+
+[notifications]
+urgency = "normal"
+timeout = 5000
+sound = true
+
+[polling]
+interval_seconds = 300  # Daemon polls every 5 minutes
+retry_attempts = 3
+retry_delay_seconds = 60
+
+# Advanced Weather History Tracking
+[history]
+enabled = true
+database_path = "~/.config/currents/weather_history.db"
+max_history_days = 365
+auto_collect = true
+
+# Collection Strategy Options:
+# - "interval": Fixed time intervals (default)
+# - "threshold": Only collect when weather changes significantly
+# - "adaptive": Adjusts collection frequency based on weather stability
+# - "hybrid": Combines interval and threshold strategies
+
+# Example 1: Fixed 30-minute intervals
+collection_strategy = "interval"
+collection_interval = 1800  # 30 minutes
+
+# Example 2: Threshold-based collection (uncomment to use)
+# collection_strategy = "threshold"
+# collection_interval = 300  # Daemon still polls every 5 minutes
+# [history.threshold_settings]
+# temperature_threshold = 2.0      # Collect if temp changes by 2°C
+# humidity_threshold = 10.0        # Collect if humidity changes by 10%
+# wind_speed_threshold = 2.0       # Collect if wind changes by 2 m/s
+# pressure_threshold = 5.0         # Collect if pressure changes by 5 hPa
+# track_description_changes = true # Collect if weather description changes
+# min_interval = 300               # Minimum 5 minutes between collections
+# max_interval = 7200              # Maximum 2 hours between collections
+# force_interval = 3600            # Force collection every hour regardless
+
+# Example 3: Adaptive collection (uncomment to use)
+# collection_strategy = "adaptive"
+# collection_interval = 1800  # Base interval of 30 minutes
+
+# Example 4: Hybrid collection (uncomment to use)
+# collection_strategy = "hybrid"
+# collection_interval = 1800  # Base interval of 30 minutes
+# [history.threshold_settings]
+# temperature_threshold = 1.5      # More sensitive thresholds
+# humidity_threshold = 5.0
+# wind_speed_threshold = 1.0
+# pressure_threshold = 3.0
+# track_description_changes = true
+# min_interval = 600               # Minimum 10 minutes
+# max_interval = 3600              # Maximum 1 hour
+# force_interval = 1800            # Force every 30 minutes
+
+# Data compression settings
+enable_compression = true
+compression_threshold = 30
+
+# Forecast Display Highlighting
+[forecast_highlights.temperature]
+high = 30.0
+high_color = "red"
+low = 0.0
+low_color = "blue"
+
+[[alerts]]
+name = "hot-weather"
+enabled = true
+message = "It's getting hot! Temperature is above 30°C"
+repeat = "once"
+[alerts.condition.temperature]
+min = 30.0
+
+[[alerts]]
+name = "cold-weather"
+enabled = true
+message = "Brrr! It's getting cold, temperature below 5°C"
+repeat = "3600"
+[alerts.condition.temperature]
+max = 5.0

@@ -1,0 +1,39 @@
+[package]
+name = "currents-history"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license-file.workspace = true
+repository.workspace = true
+description = "Historical weather tracking and pattern analysis for Currents"
+
+[[bin]]
+name = "currents-history"
+path = "src/main.rs"
+
+[dependencies]
+# Core dependencies
+currents-core = { workspace = true }
+currents-storage = { workspace = true }
+tokio = { workspace = true }
+anyhow = { workspace = true }
+chrono = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+toml = { workspace = true }
+clap = { workspace = true }
+
+# Database (now handled by currents-storage)
+
+# Visualization
+ratatui = "0.28"
+crossterm = "0.28"
+
+# Math and statistics
+statrs = "0.16"
+
+# File system
+dirs = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

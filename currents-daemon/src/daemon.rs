@@ -6,6 +6,8 @@ use crate::config::Config;
 use currents_core::{WeatherFetcher, WeatherData};
 use crate::alerts::AlertEngine;
 use crate::notifications::NotificationManager;
+use currents_history::CollectionManager;
+use currents_storage::{WeatherStorage, StorageConfig};
 use std::fs;
 use std::path::Path;
 use std::cell::RefCell;
@@ -15,6 +17,8 @@ pub struct WeatherAlertDaemon {
     weather_fetcher: WeatherFetcher,
     alert_engine: RefCell<AlertEngine>,
     notification_manager: NotificationManager,
+    storage: Option<WeatherStorage>,
+    collection_manager: Option<RefCell<CollectionManager>>,
 }
 
 impl WeatherAlertDaemon {
@@ -30,11 +34,41 @@ impl WeatherAlertDaemon {
         let alert_engine = RefCell::new(AlertEngine::new(config.alerts.clone()));
         let notification_manager = NotificationManager::new(config.notifications.clone());
         
+        // Initialize storage if configured
+        let (storage, collection_manager) = if let Some(history_config) = &config.history {
+            if history_config.auto_collect {
+                let storage_config = StorageConfig {
+                    database_path: history_config.database_path.clone(),
+                    max_history_days: history_config.max_history_days,
+                    enable_compression: history_config.enable_compression,
+                    compression_threshold: history_config.compression_threshold,
+                };
+                match WeatherStorage::new(&storage_config.database_path, storage_config.clone()) {
+                    Ok(s) => {
+                        info!("Weather storage enabled: {}", history_config.database_path);
+                        info!("Collection strategy: {}", history_config.collection_strategy);
+                        let collection_mgr = CollectionManager::new(history_config.clone());
+                        (Some(s), Some(RefCell::new(collection_mgr)))
+                    }
+                    Err(e) => {
+                        warn!("Failed to initialize weather storage: {}", e);
+                        (None, None)
+                    }
+                }
+            } else {
+                (None, None)
+            }
+        } else {
+            (None, None)
+        };
+        
         Ok(Self {
             config,
             weather_fetcher,
             alert_engine,
             notification_manager,
+            storage,
+            collection_manager,
         })
     }
     
@@ -53,6 +87,22 @@ impl WeatherAlertDaemon {
                     if let Err(e) = self.write_cache_snapshot(&weather) {
                         warn!("Failed to write cache snapshot: {}", e);
                     }
+                    
+                    // Log weather data to storage if enabled (with smart collection)
+                    if let (Some(ref storage), Some(ref collection_mgr)) = (&self.storage, &self.collection_manager) {
+                        let mut manager = collection_mgr.borrow_mut();
+                        if let Ok(should_collect) = manager.should_collect(&weather, storage).await {
+                            if should_collect {
+                                if let Err(e) = manager.collect(&weather, storage).await {
+                                    warn!("Failed to store weather data in storage: {}", e);
+                                } else {
+                                    info!("Weather data collected using {} strategy", 
+                                          self.config.history.as_ref().unwrap().collection_strategy);
+                                }
+                            }
+                        }
+                    }
+                    
                     let triggered_alerts = self.alert_engine.borrow_mut().check_alerts(&weather);
                     
                     for alert in triggered_alerts {
@@ -98,6 +148,23 @@ impl WeatherAlertDaemon {
                 info!("Weather data: {:.1}°C, {:.1}% humidity, {:.1} m/s wind", 
                       weather.temperature, weather.humidity, weather.wind_speed);
                 info!("Description: {}", weather.description);
+                
+                // Log weather data to storage if enabled (with smart collection)
+                if let (Some(ref storage), Some(ref collection_mgr)) = (&self.storage, &self.collection_manager) {
+                    let mut manager = collection_mgr.borrow_mut();
+                    if let Ok(should_collect) = manager.should_collect(&weather, storage).await {
+                        if should_collect {
+                            if let Err(e) = manager.collect(&weather, storage).await {
+                                warn!("Failed to store weather data in storage: {}", e);
+                            } else {
+                                info!("Weather data collected using {} strategy", 
+                                      self.config.history.as_ref().unwrap().collection_strategy);
+                            }
+                        } else {
+                            info!("Weather data not collected (thresholds not met)");
+                        }
+                    }
+                }
                 
                 let triggered_alerts = self.alert_engine.borrow_mut().check_alerts(&weather);
                 

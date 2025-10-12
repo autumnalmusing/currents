@@ -4,6 +4,9 @@ members = [
     "currents-core",
     "currents-daemon",
     "currents-forecast",
+    "currents-history",
+    "currents-storage",
+    "currents-orchestrator",
 ]
 
 [workspace.package]
@@ -11,7 +14,7 @@ version = "0.1.0"
 edition = "2021"
 authors = ["autumn"]
 license-file = "LICENSE"
-repository = "https://github.com/yourusername/currents"
+repository = "https://github.com/autumnalmusing/currents"
 
 [workspace.dependencies]
 # Shared dependencies with consistent versions across workspace
@@ -38,5 +41,17 @@ tempfile = "3.14"
 # Utility crates
 dirs = "5.0"
 
+# Database
+rusqlite = { version = "0.32", features = ["bundled"] }
+
+# Visualization
+ratatui = "0.28"
+crossterm = "0.28"
+
+# Math and statistics
+statrs = "0.16"
+
 # Inter-workspace dependencies
 currents-core = { path = "currents-core" }
+currents-history = { path = "currents-history" }
+currents-storage = { path = "currents-storage" }

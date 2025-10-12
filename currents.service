@@ -1,6 +1,6 @@
 [Unit]
 Description=Currents Weather Alerts Daemon
-Documentation=https://github.com/autumn/currents
+Documentation=https://github.com/autumnalmusing/currents
 After=network.target
 
 [Service]

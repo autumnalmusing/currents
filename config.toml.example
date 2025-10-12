@@ -1,0 +1,101 @@
+# Currents Configuration
+# This is an example configuration file in TOML format
+
+[weather]
+api_key = "your-openweathermap-api-key-here"
+location = "London,UK"
+units = "metric"
+provider = "openweathermap"
+# Maximum API calls per day (default: 1000, increase if you're willing to pay for more)
+# Free tiers typically allow 1000 calls/day before charges apply
+api_daily_limit = 1000
+
+[notifications]
+urgency = "normal"
+timeout = 5000
+sound = true
+
+[polling]
+interval_seconds = 300
+retry_attempts = 3
+retry_delay_seconds = 60
+
+# Weather History Tracking
+[history]
+enabled = true
+database_path = "~/.config/currents/weather_history.db"
+max_history_days = 365
+auto_collect = true
+collection_interval = 3600
+enable_compression = true
+compression_threshold = 30
+
+# Forecast Display Highlighting (for --forecast command)
+# Values exceeding these thresholds will be colored in the forecast table
+# 
+# Color Options:
+#   - Named colors: "black", "red", "green", "yellow", "blue", "magenta", "cyan", "white"
+#   - Hex colors: "#d3c6aa", "#ff5733", "#f00" (3 or 6 digit hex codes)
+#   - Named colors respect your terminal color scheme
+#   - Hex colors display exact RGB values (if your terminal supports it)
+[forecast_highlights.temperature]
+high = 30.0        # Temperatures >= this will be highlighted (in your configured units)
+high_color = "red" # Color for high temperatures (default: "red")
+low = 0.0          # Temperatures <= this will be highlighted
+low_color = "blue" # Color for low temperatures (default: "blue")
+
+# Optional: Highlight high/low humidity (uncomment to enable)
+# [forecast_highlights.humidity]
+# high = 80.0             # Humidity >= 80% highlighted
+# high_color = "#89b4fa"  # You can use hex colors for custom shades!
+# low = 20.0              # Humidity <= 20% highlighted
+# low_color = "yellow"    # Or use named colors
+
+# Optional: Highlight high/low wind speeds (uncomment to enable)
+# [forecast_highlights.wind_speed]
+# high = 15.0           # Wind >= 15 m/s highlighted
+# high_color = "red"
+# low = 2.0             # Wind <= 2 m/s highlighted
+# low_color = "cyan"
+
+# Optional: Highlight precipitation probability (uncomment to enable)
+# [forecast_highlights.precipitation]
+# high = 70.0           # Precipitation >= 70% highlighted
+# high_color = "magenta"
+# low = 5.0             # Precipitation <= 5% highlighted
+# low_color = "green"
+
+[[alerts]]
+name = "hot-weather"
+enabled = true
+message = "It's getting hot! Temperature is above 30°C"
+# repeat = "once"  (default) - Only notify on first trigger, not again until conditions return to normal
+repeat = "once"
+[alerts.condition.temperature]
+min = 30.0
+
+[[alerts]]
+name = "cold-weather"
+enabled = true
+message = "Brrr! It's getting cold, temperature below 5°C"
+# repeat = "3600"  - Notify every hour (3600 seconds) while condition persists
+repeat = "3600"
+[alerts.condition.temperature]
+max = 5.0
+
+[[alerts]]
+name = "stormy-weather"
+enabled = true
+message = "Stormy weather detected! Stay safe."
+# repeat = "once" (default)
+[alerts.condition]
+description = "storm,thunder,lightning"
+
+[[alerts]]
+name = "rain-alert"
+enabled = true
+message = "Rain detected - don't forget your umbrella!"
+# repeat = "always" - Notify every polling interval while raining (use sparingly!)
+repeat = "always"
+[alerts.condition]
+description = "rain,drizzle,shower"

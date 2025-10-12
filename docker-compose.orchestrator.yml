@@ -1,0 +1,131 @@
+version: '3.8'
+
+services:
+  # Multi-location weather monitoring orchestrator
+  currents-orchestrator:
+    build:
+      context: .
+      dockerfile: Dockerfile.orchestrator
+    container_name: currents-orchestrator
+    restart: unless-stopped
+    volumes:
+      - ./config.orchestrator.toml:/etc/currents/orchestrator.toml:ro
+      - currents-data:/var/lib/currents
+      - currents-logs:/var/log/currents
+    environment:
+      - RUST_LOG=info
+      - RUST_LOG_FORMAT=json
+    healthcheck:
+      test: ["CMD", "currents-orchestrator", "--health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - currents-network
+
+  # Weather forecast display service
+  currents-forecast:
+    build:
+      context: .
+      dockerfile: Dockerfile.orchestrator
+    container_name: currents-forecast
+    restart: "no"
+    volumes:
+      - ./config.orchestrator.toml:/etc/currents/orchestrator.toml:ro
+    environment:
+      - RUST_LOG=info
+    command: ["currents-forecast"]
+    networks:
+      - currents-network
+    profiles:
+      - forecast
+
+  # Weather history analysis service
+  currents-history:
+    build:
+      context: .
+      dockerfile: Dockerfile.orchestrator
+    container_name: currents-history
+    restart: "no"
+    volumes:
+      - ./config.orchestrator.toml:/etc/currents/orchestrator.toml:ro
+      - currents-data:/var/lib/currents
+    environment:
+      - RUST_LOG=info
+    command: ["currents-history", "history", "7d"]
+    networks:
+      - currents-network
+    profiles:
+      - history
+
+  # Monitoring and metrics (optional)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: currents-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    networks:
+      - currents-network
+    profiles:
+      - monitoring
+
+  # Log aggregation (optional)
+  loki:
+    image: grafana/loki:latest
+    container_name: currents-loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./monitoring/loki.yml:/etc/loki/local-config.yaml:ro
+      - loki-data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - currents-network
+    profiles:
+      - monitoring
+
+  # Visualization (optional)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: currents-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    networks:
+      - currents-network
+    profiles:
+      - monitoring
+
+volumes:
+  currents-data:
+    driver: local
+  currents-logs:
+    driver: local
+  prometheus-data:
+    driver: local
+  loki-data:
+    driver: local
+  grafana-data:
+    driver: local
+
+networks:
+  currents-network:
+    driver: bridge

@@ -1,0 +1,44 @@
+# Currents Orchestrator Configuration
+# Multi-location weather monitoring coordination
+
+[orchestrator]
+storage_path = "/tmp/currents-orchestrator.db"
+analysis_interval = 3600  # 1 hour
+health_check_interval = 300  # 5 minutes
+
+# Location configurations
+[locations.london]
+name = "London, UK"
+coordinates = [51.5074, -0.1278]
+weather.api_key = "your-openweathermap-api-key"
+weather.provider = "openweathermap"
+weather.units = "metric"
+collection.interval = 1800  # 30 minutes
+collection.strategy = "interval"
+
+[locations.tokyo]
+name = "Tokyo, JP"
+coordinates = [35.6762, 139.6503]
+weather.api_key = "your-openweathermap-api-key"
+weather.provider = "openweathermap"
+weather.units = "metric"
+collection.interval = 1800  # 30 minutes
+collection.strategy = "threshold"
+
+[locations.sydney]
+name = "Sydney, AU"
+coordinates = [-33.8688, 151.2093]
+weather.api_key = "your-openweathermap-api-key"
+weather.provider = "openweathermap"
+weather.units = "metric"
+collection.interval = 1800  # 30 minutes
+collection.strategy = "hybrid"
+
+[locations.denver]
+name = "Denver, CO, US"
+coordinates = [39.7392, -104.9903]
+weather.api_key = "your-openweathermap-api-key"
+weather.provider = "openweathermap"
+weather.units = "imperial"
+collection.interval = 1800  # 30 minutes
+collection.strategy = "interval"

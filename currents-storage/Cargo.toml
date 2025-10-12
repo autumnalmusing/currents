@@ -1,0 +1,30 @@
+[package]
+name = "currents-storage"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license-file.workspace = true
+repository.workspace = true
+description = "Weather data storage and persistence layer for Currents"
+
+[lib]
+name = "currents_storage"
+path = "src/lib.rs"
+
+[dependencies]
+# Core dependencies
+currents-core = { workspace = true }
+tokio = { workspace = true }
+anyhow = { workspace = true }
+chrono = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Database
+rusqlite = { version = "0.32", features = ["bundled"] }
+
+# File system
+dirs = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
