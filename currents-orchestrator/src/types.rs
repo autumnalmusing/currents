@@ -153,6 +153,7 @@ pub struct OrchestratorConfig {
     pub analysis_interval: u64, // seconds
     pub health_check_interval: u64, // seconds
     pub batch_size: Option<usize>, // locations per collector process
+    pub global_api_limit: Option<u64>, // global daily API call limit across all locations
     pub locations: HashMap<LocationId, LocationConfig>,
 }
 
@@ -163,6 +164,7 @@ impl Default for OrchestratorConfig {
             analysis_interval: 3600, // 1 hour
             health_check_interval: 300, // 5 minutes
             batch_size: Some(5),
+            global_api_limit: None, // No global limit by default
             locations: HashMap::new(),
         }
     }

@@ -8,6 +8,7 @@ analysis_interval = 3600  # 1 hour
 health_check_interval = 300  # 5 minutes
 batch_size = 5  # Locations per collector process (5-10 recommended)
 max_locations_per_collector = 10
+global_api_limit = 1000  # Global daily API call limit across all locations (optional)
 
 # Location configurations
 [orchestrator.locations.london]

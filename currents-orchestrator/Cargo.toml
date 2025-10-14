@@ -25,7 +25,7 @@ anyhow = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 chrono = { workspace = true }
-    uuid = { version = "1.0", features = ["v4", "serde"] }
-    async-trait = "0.1"
-    shellexpand = "3.0"
-    futures = "0.3"
+uuid = { workspace = true }
+async-trait = { workspace = true }
+shellexpand = { workspace = true }
+futures = { workspace = true }

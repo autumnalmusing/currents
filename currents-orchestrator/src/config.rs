@@ -19,6 +19,7 @@ pub struct OrchestratorSection {
     pub analysis_interval: Option<u64>,
     pub health_check_interval: Option<u64>,
     pub batch_size: Option<usize>,
+    pub global_api_limit: Option<u64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -141,6 +142,7 @@ impl TryFrom<OrchestratorConfigToml> for OrchestratorConfig {
             analysis_interval: toml.orchestrator.analysis_interval.unwrap_or(3600),
             health_check_interval: toml.orchestrator.health_check_interval.unwrap_or(300),
             batch_size: toml.orchestrator.batch_size,
+            global_api_limit: toml.orchestrator.global_api_limit,
             locations,
         })
     }
@@ -180,6 +182,7 @@ impl From<&OrchestratorConfig> for OrchestratorConfigToml {
                 analysis_interval: Some(config.analysis_interval),
                 health_check_interval: Some(config.health_check_interval),
                 batch_size: config.batch_size,
+                global_api_limit: config.global_api_limit,
             },
             locations,
         }

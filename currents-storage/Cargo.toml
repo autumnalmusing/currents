@@ -21,7 +21,7 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 
 # Database
-rusqlite = { version = "0.32", features = ["bundled"] }
+rusqlite = { workspace = true }
 
 # File system
 dirs = { workspace = true }

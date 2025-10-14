@@ -2,7 +2,7 @@
 
 use currents_orchestrator::{
     LocationManager, CollectorCoordinator, CrossLocationAnalyzer, RegionManager,
-    OrchestratorConfig
+    GlobalApiTracker, OrchestratorConfig
 };
 use currents_storage::WeatherStorage;
 use anyhow::{Result, Context};
@@ -62,6 +62,16 @@ async fn main() -> Result<()> {
         .context("Configuration validation failed")?;
 
     info!("Loaded configuration with {} locations", config.locations.len());
+
+    // Initialize global API tracker if limit is configured
+    let global_api_tracker = if let Some(limit) = config.global_api_limit {
+        info!("Global API limit configured: {} calls per day", limit);
+        Some(GlobalApiTracker::with_default_path()
+            .context("Failed to initialize global API tracker")?)
+    } else {
+        info!("No global API limit configured");
+        None
+    };
 
     // Initialize storage
     let storage_config = currents_storage::types::StorageConfig {
@@ -144,6 +154,7 @@ async fn main() -> Result<()> {
         location_manager,
         collector_coordinator,
         cross_location_analyzer,
+        global_api_tracker,
         config,
     ).await?;
 
@@ -154,6 +165,7 @@ async fn run_orchestrator(
     mut location_manager: LocationManager,
     mut collector_coordinator: CollectorCoordinator,
     cross_location_analyzer: CrossLocationAnalyzer,
+    global_api_tracker: Option<GlobalApiTracker>,
     config: OrchestratorConfig,
 ) -> Result<()> {
     info!("Orchestrator main loop started");
@@ -173,6 +185,10 @@ async fn run_orchestrator(
 
     // Run analysis in main loop
     let mut analysis_interval = interval(analysis_interval);
+    
+    // Add API usage logging if global tracker is configured
+    let api_logging_interval = Duration::from_secs(3600); // Log every hour
+    let mut api_logging_interval = interval(api_logging_interval);
     
     // Wait for any task to complete (or fail)
     tokio::select! {
@@ -206,6 +222,14 @@ async fn run_orchestrator(
                     Err(e) => {
                         warn!("Regional analysis failed: {}", e);
                     }
+                }
+            }
+        }
+        _ = api_logging_interval.tick() => {
+            // Log global API usage if tracker is configured
+            if let (Some(ref tracker), Some(limit)) = (&global_api_tracker, config.global_api_limit) {
+                if let Err(e) = tracker.log_usage_stats(limit) {
+                    warn!("Failed to log API usage stats: {}", e);
                 }
             }
         }

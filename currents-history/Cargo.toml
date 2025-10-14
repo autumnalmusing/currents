@@ -26,11 +26,11 @@ clap = { workspace = true }
 # Database (now handled by currents-storage)
 
 # Visualization
-ratatui = "0.28"
-crossterm = "0.28"
+ratatui = { workspace = true }
+crossterm = { workspace = true }
 
 # Math and statistics
-statrs = "0.16"
+statrs = { workspace = true }
 
 # File system
 dirs = { workspace = true }

@@ -6,6 +6,7 @@ storage_path = "/var/lib/currents/orchestrator.db"
 analysis_interval = 3600  # 1 hour
 health_check_interval = 300  # 5 minutes
 default_batch_size = 5  # Default locations per collector process
+global_api_limit = 2000  # Global daily API call limit across all regions (optional)
 
 # Region configurations
 [regions.europe]
