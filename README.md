@@ -36,6 +36,7 @@ Each tool can be installed independently based on your needs.
 - **Pattern Analysis**: Trend detection and statistical analysis of weather patterns
 - **Data Export**: Export historical data in JSON or CSV formats
 - **Trend Visualization**: ASCII charts for weather trend visualization
+- **Historical Data Seeding**: Bulk import historical weather data from paid APIs
 - **Comparison Tools**: Compare current weather to historical periods
 - **Seasonal Analysis**: Identify seasonal patterns and variations
 
@@ -300,6 +301,44 @@ show_wind_dir = false     # Wind direction (optional)
 show_aqi = false          # Air quality index (optional)
 ```
 
+### Historical Data Seeding
+
+Seed your database with historical weather data using paid API keys:
+
+```bash
+# Seed with WeatherAPI (recommended for historical data)
+currents-history seed \
+  --start-date 2023-01-01 \
+  --end-date 2024-01-01 \
+  --api-key YOUR_WEATHERAPI_KEY \
+  --provider weatherapi \
+  --location "London,UK" \
+  --daily-limit 1000 \
+  --delay-ms 100
+
+# Seed with OpenWeatherMap (requires lat/lon coordinates)
+currents-history seed \
+  --start-date 2023-01-01 \
+  --end-date 2024-01-01 \
+  --api-key YOUR_OPENWEATHER_KEY \
+  --provider openweathermap \
+  --location "51.5074,0.1278" \
+  --daily-limit 1000
+```
+
+**Seeding Options:**
+- `--start-date`: Start date in YYYY-MM-DD format
+- `--end-date`: End date in YYYY-MM-DD format  
+- `--api-key`: Your paid API key
+- `--provider`: `weatherapi` (recommended) or `openweathermap`
+- `--location`: City name for WeatherAPI, or "lat,lon" for OpenWeatherMap
+- `--daily-limit`: API calls per day limit (default: 1000)
+- `--delay-ms`: Delay between API calls in milliseconds (default: 100)
+
+**Supported APIs:**
+- **WeatherAPI**: Up to 365 days of historical data (paid plans)
+- **OpenWeatherMap**: Up to 5 days of historical data (paid plans)
+
 ### Weather History Analysis
 
 The history tool provides comprehensive weather data analysis:
@@ -330,6 +369,15 @@ currents-history export csv 7d --output weather.csv  # Export as CSV
 # Database management
 currents-history stats                   # Show database statistics
 currents-history clean 365              # Keep only last 365 days
+
+# Historical data seeding (requires paid API key)
+currents-history seed \
+  --start-date 2023-01-01 \
+  --end-date 2024-01-01 \
+  --api-key YOUR_API_KEY \
+  --provider weatherapi \
+  --location "London,UK" \
+  --daily-limit 1000
 ```
 
 **History Features:**

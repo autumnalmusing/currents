@@ -4,6 +4,7 @@ use currents_core::types::WeatherData;
 use currents_history::{PatternAnalyzer, HistoryConfig};
 use currents_storage::{WeatherStorage, StorageConfig};
 use std::path::PathBuf;
+use std::io::Write;
 
 #[derive(Parser)]
 #[command(name = "currents-history")]
@@ -73,6 +74,37 @@ enum Commands {
         /// Output file path
         #[arg(short, long)]
         output: Option<PathBuf>,
+    },
+    
+    /// Seed database with historical weather data from APIs
+    Seed {
+        /// Start date (YYYY-MM-DD format)
+        #[arg(long)]
+        start_date: String,
+        
+        /// End date (YYYY-MM-DD format)
+        #[arg(long)]
+        end_date: String,
+        
+        /// API key for weather service
+        #[arg(long)]
+        api_key: String,
+        
+        /// Weather provider (openweathermap, weatherapi)
+        #[arg(long, default_value = "weatherapi")]
+        provider: String,
+        
+        /// Location to fetch data for
+        #[arg(long)]
+        location: String,
+        
+        /// API daily limit (calls per day)
+        #[arg(long, default_value = "1000")]
+        daily_limit: u64,
+        
+        /// Delay between API calls in milliseconds
+        #[arg(long, default_value = "100")]
+        delay_ms: u64,
     },
 }
 
@@ -156,6 +188,73 @@ async fn main() -> Result<()> {
                     }
                 }
                 _ => return Err(anyhow::anyhow!("Unsupported format: {}", format)),
+            }
+        }
+        
+        Commands::Seed { start_date, end_date, api_key, provider, location, daily_limit, delay_ms } => {
+            println!("Starting historical data seeding...");
+            println!("Provider: {}", provider);
+            println!("Location: {}", location);
+            println!("Date range: {} to {}", start_date, end_date);
+            
+            // Parse dates
+            let start = chrono::NaiveDate::parse_from_str(&start_date, "%Y-%m-%d")
+                .context("Invalid start date format. Use YYYY-MM-DD")?
+                .and_hms_opt(12, 0, 0)
+                .unwrap()
+                .and_utc();
+            
+            let end = chrono::NaiveDate::parse_from_str(&end_date, "%Y-%m-%d")
+                .context("Invalid end date format. Use YYYY-MM-DD")?
+                .and_hms_opt(12, 0, 0)
+                .unwrap()
+                .and_utc();
+            
+            if start > end {
+                return Err(anyhow::anyhow!("Start date must be before end date"));
+            }
+            
+            // Create weather fetcher
+            let fetcher = currents_core::api::WeatherFetcher::new(
+                api_key,
+                location,
+                "metric".to_string(),
+                provider,
+                daily_limit,
+            );
+            
+            // Fetch historical data
+            let historical_data = fetcher.fetch_historical_range(start, end).await?;
+            
+            println!("Fetched {} historical records", historical_data.len());
+            
+            // Store data in database
+            let mut stored_count = 0;
+            let mut error_count = 0;
+            
+            for weather_data in historical_data {
+                match storage.store_weather_data("default", &weather_data).await {
+                    Ok(_) => {
+                        stored_count += 1;
+                        if stored_count % 10 == 0 {
+                            print!(".");
+                            std::io::stdout().flush().unwrap();
+                        }
+                    }
+                    Err(e) => {
+                        error_count += 1;
+                        eprintln!("Error storing data for {}: {}", weather_data.timestamp.format("%Y-%m-%d"), e);
+                    }
+                }
+                
+                // Add delay between storage operations
+                tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
+            }
+            
+            println!("\nSeeding completed!");
+            println!("Successfully stored: {} records", stored_count);
+            if error_count > 0 {
+                println!("Errors encountered: {} records", error_count);
             }
         }
     }

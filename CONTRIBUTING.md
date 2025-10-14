@@ -18,7 +18,7 @@ cargo build --workspace
 
 ## Workspace Structure
 
-Currents is built as a Cargo workspace with independent, composable crates:
+Currents is built as a Cargo workspace with independent composable crates:
 
 ```
 currents/
@@ -56,11 +56,35 @@ currents/
 │   ├── src/
 │   │   ├── main.rs              # History binary entry point
 │   │   ├── lib.rs               # Library for tests
-│   │   ├── database.rs          # SQLite database management
+│   │   ├── collection.rs        # Data collection strategies
 │   │   ├── analysis.rs          # Pattern analysis and trends
 │   │   ├── config.rs            # History-specific config
 │   │   ├── cli.rs               # CLI interface
 │   │   └── visualization.rs     # ASCII chart rendering
+│   ├── tests/
+│   └── Cargo.toml
+│
+├── currents-storage/          # Centralized data storage
+│   ├── src/
+│   │   ├── lib.rs               # Public API
+│   │   ├── database.rs          # SQLite database operations
+│   │   ├── migration.rs         # Database schema migrations
+│   │   └── types.rs             # Storage-specific types
+│   └── Cargo.toml
+│
+├── currents-orchestrator/      # Multi-location monitoring
+│   ├── src/
+│   │   ├── main.rs              # Orchestrator binary entry point
+│   │   ├── lib.rs               # Library for tests
+│   │   ├── config.rs            # Orchestrator-specific config
+│   │   ├── location_manager.rs  # Location management
+│   │   ├── collector_coordinator.rs # Collector coordination
+│   │   ├── cross_location_analyzer.rs # Cross-location analysis
+│   │   ├── error_handling.rs    # Error handling utilities
+│   │   ├── types.rs             # Orchestrator-specific types
+│   │   ├── unified_config.rs    # Unified configuration
+│   │   └── bin/
+│   │       └── simple-collector.rs # Simple collector binary
 │   ├── tests/
 │   └── Cargo.toml
 │
@@ -78,6 +102,8 @@ cargo build --workspace
 cargo build -p currents-daemon
 cargo build -p currents-forecast
 cargo build -p currents-history
+cargo build -p currents-storage
+cargo build -p currents-orchestrator
 cargo build -p currents-core
 ```
 
@@ -90,6 +116,8 @@ cargo test --workspace
 cargo test -p currents-daemon
 cargo test -p currents-forecast
 cargo test -p currents-history
+cargo test -p currents-storage
+cargo test -p currents-orchestrator
 ```
 
 ### Running Development Versions
@@ -98,6 +126,7 @@ cargo test -p currents-history
 cargo run -p currents-daemon -- --foreground
 cargo run -p currents-forecast -- --days 3
 cargo run -p currents-history -- history 7d
+cargo run -p currents-orchestrator -- --config config.orchestrator.toml
 ```
 
 ## Adding New Tools
@@ -128,6 +157,15 @@ All tools remain fully independent while sharing core types and API clients.
 ### Forecast-Specific
 - `tabled` - Beautiful terminal tables
 - `clap` - CLI arguments
+
+### Storage-Specific
+- `rusqlite` - SQLite database operations
+- `tokio` - Async runtime for database operations
+
+### Orchestrator-Specific
+- `serde` / `toml` - Configuration parsing
+- `tracing` / `tracing-subscriber` - Logging
+- `tokio` - Async runtime for multi-location coordination
 
 ## Development Workflow
 

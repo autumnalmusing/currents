@@ -401,6 +401,38 @@ The demo will:
 
 ## Weather Analysis
 
+### Historical Data Seeding
+
+Seed your database with historical weather data from paid APIs:
+
+```bash
+# Seed with WeatherAPI (recommended - supports up to 365 days)
+currents-history seed \
+  --start-date 2023-01-01 \
+  --end-date 2024-01-01 \
+  --api-key YOUR_WEATHERAPI_KEY \
+  --provider weatherapi \
+  --location "London,UK" \
+  --daily-limit 1000 \
+  --delay-ms 100
+
+# Seed with OpenWeatherMap (limited to 5 days historical)
+currents-history seed \
+  --start-date 2024-01-01 \
+  --end-date 2024-01-05 \
+  --api-key YOUR_OPENWEATHER_KEY \
+  --provider openweathermap \
+  --location "51.5074,0.1278" \
+  --daily-limit 1000
+```
+
+**Important Notes:**
+- WeatherAPI is recommended for historical data (up to 365 days)
+- OpenWeatherMap historical API is limited to 5 days
+- Both require paid API keys
+- The seeding process includes rate limiting and progress tracking
+- Data is stored in the same SQLite database used by the daemon
+
 ### Historical Data
 
 Enable weather history tracking:
@@ -444,6 +476,15 @@ currents-history export csv 7d --output weather.csv  # Export as CSV
 # Database management
 currents-history stats                   # Database statistics
 currents-history clean 365               # Keep only last 365 days
+
+# Historical data seeding (requires paid API key)
+currents-history seed \
+  --start-date 2023-01-01 \
+  --end-date 2024-01-01 \
+  --api-key YOUR_API_KEY \
+  --provider weatherapi \
+  --location "London,UK" \
+  --daily-limit 1000
 ```
 
 ### Forecast Display

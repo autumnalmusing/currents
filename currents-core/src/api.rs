@@ -215,6 +215,75 @@ impl WeatherFetcher {
         result
     }
 
+    /// Fetch historical weather data for a specific date
+    pub async fn fetch_historical_weather(&self, date: chrono::DateTime<chrono::Utc>) -> Result<WeatherData> {
+        // Check rate limit before making API call
+        if let Some(ref tracker) = self.api_stats {
+            match tracker.can_make_call(self.api_daily_limit) {
+                Ok(true) => {
+                    // We're under the limit, proceed
+                }
+                Ok(false) => {
+                    return Err(anyhow::anyhow!(
+                        "API rate limit reached ({} calls per day). Will reset at midnight UTC.",
+                        self.api_daily_limit
+                    ));
+                }
+                Err(e) => {
+                    // Log the error but proceed (fail open)
+                    tracing::warn!("Failed to check rate limit: {}. Proceeding with API call.", e);
+                }
+            }
+        }
+
+        let result = match self.provider.as_str() {
+            "openweathermap" => self.fetch_openweathermap_historical(date).await,
+            "weatherapi" => self.fetch_weatherapi_historical(date).await,
+            _ => Err(anyhow::anyhow!("Unsupported weather provider: {}", self.provider)),
+        };
+        
+        // Increment API call counter if fetch was successful
+        if result.is_ok() {
+            if let Some(ref tracker) = self.api_stats {
+                let _ = tracker.increment();
+            }
+        }
+        
+        result
+    }
+
+    /// Fetch historical weather data for a date range (bulk operation)
+    pub async fn fetch_historical_range(
+        &self, 
+        start_date: chrono::DateTime<chrono::Utc>, 
+        end_date: chrono::DateTime<chrono::Utc>
+    ) -> Result<Vec<WeatherData>> {
+        let mut results = Vec::new();
+        let mut current_date = start_date;
+        
+        // Add a small delay between requests to respect rate limits
+        let delay = std::time::Duration::from_millis(100);
+        
+        while current_date <= end_date {
+            match self.fetch_historical_weather(current_date).await {
+                Ok(weather_data) => {
+                    results.push(weather_data);
+                }
+                Err(e) => {
+                    tracing::warn!("Failed to fetch historical data for {}: {}", current_date.format("%Y-%m-%d"), e);
+                    // Continue with next date instead of failing completely
+                }
+            }
+            
+            current_date = current_date + chrono::Duration::days(1);
+            
+            // Add delay between requests to avoid overwhelming the API
+            tokio::time::sleep(delay).await;
+        }
+        
+        Ok(results)
+    }
+
     async fn fetch_openweathermap_forecast(&self) -> Result<ForecastData> {
         let url = format!(
             "https://api.openweathermap.org/data/2.5/forecast?q={}&appid={}&units={}&cnt=40",
@@ -386,6 +455,90 @@ impl WeatherFetcher {
             days,
         })
     }
+
+    async fn fetch_openweathermap_historical(&self, date: chrono::DateTime<chrono::Utc>) -> Result<WeatherData> {
+        let timestamp = date.timestamp();
+        let url = format!(
+            "https://api.openweathermap.org/data/2.5/onecall/timemachine?lat={}&lon={}&dt={}&appid={}&units={}",
+            // Note: OpenWeatherMap historical API requires lat/lon, not city name
+            // For now, we'll use a default location (London) - this should be configurable
+            "51.5074", "0.1278", timestamp, self.api_key, self.units
+        );
+        
+        info!("Fetching historical weather from OpenWeatherMap for {}", date.format("%Y-%m-%d"));
+        
+        let response = self.client
+            .get(&url)
+            .send()
+            .await
+            .context("Failed to send request to OpenWeatherMap historical API")?;
+        
+        if !response.status().is_success() {
+            return Err(anyhow::anyhow!(
+                "OpenWeatherMap historical API error: {} - {}",
+                response.status(),
+                response.text().await.unwrap_or_default()
+            ));
+        }
+        
+        let historical_response: OpenWeatherMapHistoricalResponse = response
+            .json()
+            .await
+            .context("Failed to parse OpenWeatherMap historical response")?;
+        
+        Ok(WeatherData {
+            temperature: historical_response.current.temp,
+            humidity: historical_response.current.humidity,
+            wind_speed: historical_response.current.wind_speed,
+            description: historical_response.current.weather[0].description.clone(),
+            precipitation: Some(PrecipitationData {
+                intensity: "none".to_string(), // Historical data doesn't include precipitation intensity
+                probability: 0.0,
+            }),
+            timestamp: date,
+        })
+    }
+
+    async fn fetch_weatherapi_historical(&self, date: chrono::DateTime<chrono::Utc>) -> Result<WeatherData> {
+        let date_str = date.format("%Y-%m-%d").to_string();
+        let url = format!(
+            "https://api.weatherapi.com/v1/history.json?key={}&q={}&dt={}",
+            self.api_key, self.location, date_str
+        );
+        
+        info!("Fetching historical weather from WeatherAPI for {}", date_str);
+        
+        let response = self.client
+            .get(&url)
+            .send()
+            .await
+            .context("Failed to send request to WeatherAPI historical API")?;
+        
+        if !response.status().is_success() {
+            return Err(anyhow::anyhow!(
+                "WeatherAPI historical error: {} - {}",
+                response.status(),
+                response.text().await.unwrap_or_default()
+            ));
+        }
+        
+        let historical_response: WeatherApiHistoricalResponse = response
+            .json()
+            .await
+            .context("Failed to parse WeatherAPI historical response")?;
+        
+        Ok(WeatherData {
+            temperature: historical_response.forecast.forecastday[0].day.avgtemp_c,
+            humidity: historical_response.forecast.forecastday[0].day.avghumidity,
+            wind_speed: historical_response.forecast.forecastday[0].day.maxwind_kph / 3.6, // Convert km/h to m/s
+            description: historical_response.forecast.forecastday[0].day.condition.text.clone(),
+            precipitation: Some(PrecipitationData {
+                intensity: self.classify_precipitation_intensity(historical_response.forecast.forecastday[0].day.totalprecip_mm),
+                probability: historical_response.forecast.forecastday[0].day.daily_chance_of_rain / 100.0,
+            }),
+            timestamp: date,
+        })
+    }
 }
 
 // OpenWeatherMap API response structures
@@ -506,4 +659,44 @@ struct DayData {
 struct AirQuality {
     #[serde(rename = "us-epa-index")]
     us_epa_index: Option<f64>, // US EPA Air Quality Index (1-6 scale)
+}
+
+// OpenWeatherMap Historical API response structures
+#[derive(Debug, Deserialize)]
+struct OpenWeatherMapHistoricalResponse {
+    current: OpenWeatherMapHistoricalCurrent,
+}
+
+#[derive(Debug, Deserialize)]
+struct OpenWeatherMapHistoricalCurrent {
+    temp: f64,
+    humidity: f64,
+    wind_speed: f64,
+    weather: Vec<WeatherInfo>,
+}
+
+// WeatherAPI Historical API response structures
+#[derive(Debug, Deserialize)]
+struct WeatherApiHistoricalResponse {
+    forecast: WeatherApiHistoricalForecast,
+}
+
+#[derive(Debug, Deserialize)]
+struct WeatherApiHistoricalForecast {
+    forecastday: Vec<WeatherApiHistoricalDay>,
+}
+
+#[derive(Debug, Deserialize)]
+struct WeatherApiHistoricalDay {
+    day: WeatherApiHistoricalDayData,
+}
+
+#[derive(Debug, Deserialize)]
+struct WeatherApiHistoricalDayData {
+    avgtemp_c: f64,
+    avghumidity: f64,
+    maxwind_kph: f64,
+    condition: ConditionData,
+    totalprecip_mm: f64,
+    daily_chance_of_rain: f64,
 }
