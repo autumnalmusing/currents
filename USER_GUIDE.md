@@ -63,10 +63,10 @@ imports = [ inputs.currents.homeManagerModules.currents ];
 services.currents = {
   enable = true;
   weather = {
-    apiKeyFile = "/run/secrets/openweathermap-api-key";
+    apiKeyFile = "/run/secrets/weatherapi-key";
     location = "Denver,US";
     units = "metric";
-    provider = "openweathermap";
+    provider = "weatherapi";
   };
   alerts = [
     {
@@ -122,10 +122,10 @@ Create `~/.config/currents/config.toml`:
 
 ```toml
 [weather]
-api_key = "your-openweathermap-api-key"
+api_key = "your-weatherapi-key"
 location = "Denver,US"
 units = "metric"
-provider = "openweathermap"
+provider = "weatherapi"
 polling_interval = 1800  # 30 minutes
 
 [alerts]
@@ -166,8 +166,8 @@ health_check_interval = 300
 [orchestrator.locations.london]
 name = "London, UK"
 coordinates = [51.5074, -0.1278]
-weather.api_key = "your-openweathermap-api-key"
-weather.provider = "openweathermap"
+weather.api_key = "your-weatherapi-key"
+weather.provider = "weatherapi"
 weather.units = "metric"
 weather.collection_interval = 1800
 collection_strategy = "interval"
@@ -175,8 +175,8 @@ collection_strategy = "interval"
 [orchestrator.locations.tokyo]
 name = "Tokyo, JP"
 coordinates = [35.6762, 139.6503]
-weather.api_key = "your-openweathermap-api-key"
-weather.provider = "openweathermap"
+weather.api_key = "your-weatherapi-key"
+weather.provider = "weatherapi"
 weather.units = "metric"
 weather.collection_interval = 1800
 collection_strategy = "interval"
@@ -184,8 +184,8 @@ collection_strategy = "interval"
 [orchestrator.locations.denver]
 name = "Denver, US"
 coordinates = [39.7392, -104.9903]
-weather.api_key = "your-openweathermap-api-key"
-weather.provider = "openweathermap"
+weather.api_key = "your-weatherapi-key"
+weather.provider = "weatherapi"
 weather.units = "imperial"
 weather.collection_interval = 1800
 collection_strategy = "interval"
@@ -195,16 +195,17 @@ collection_strategy = "interval"
 
 Currents supports multiple weather providers:
 
-**OpenWeatherMap** (Recommended)
+**WeatherAPI** (Recommended)
+- Free tier: 1000 calls/day
+- Additional features (AQI, UV index)
+- Historical data up to 365 days (paid plans)
+- Get API key: https://weatherapi.com
+
+**OpenWeatherMap**
 - Free tier: 1000 calls/day
 - Comprehensive data
 - Global coverage
 - Get API key: https://openweathermap.org/api
-
-**WeatherAPI**
-- Free tier: 1000 calls/day
-- Additional features (AQI, UV index)
-- Get API key: https://weatherapi.com
 
 ### API Rate Limiting
 

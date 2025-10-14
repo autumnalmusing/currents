@@ -434,12 +434,12 @@ api_key = "${OPENWEATHER_API_KEY}"
 **Use secret files:**
 ```bash
 # Create secret file
-echo "your-api-key" > /run/secrets/openweathermap-api-key
-chmod 600 /run/secrets/openweathermap-api-key
+echo "your-api-key" > /run/secrets/weatherapi-key
+chmod 600 /run/secrets/weatherapi-key
 
 # Reference in configuration
 [weather]
-api_key_file = "/run/secrets/openweathermap-api-key"
+api_key_file = "/run/secrets/weatherapi-key"
 ```
 
 ### File Permissions

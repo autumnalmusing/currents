@@ -23,7 +23,7 @@ Each tool can be installed independently based on your needs.
 - **API Rate Limiting**: Automatic tracking to stay under free tier limits (prevents charges)
 - **Cache for Waybar**: Exports weather data for status bar integration
 - **Automatic Data Collection**: Optional automatic logging of weather data for historical analysis
-- **Multiple Weather Providers**: Supports OpenWeatherMap and WeatherAPI
+- **Multiple Weather Providers**: Supports OpenWeatherMap and WeatherAPI (WeatherAPI recommended for historical data)
 
 ### Forecast Tool (`currents-forecast`)
 - **5-Day Weather Forecast**: Beautiful formatted table with comprehensive data
@@ -43,9 +43,10 @@ Each tool can be installed independently based on your needs.
 ### Orchestrator (`currents-orchestrator`)
 - **Multi-Location Monitoring**: Monitor weather across multiple cities/regions simultaneously
 - **Cross-Location Analysis**: Detect correlations and patterns between locations
-- **Independent Collectors**: Each location runs its own collector process
+- **Efficient Collectors**: Multi-location collectors (5-10 locations per process) for optimal resource usage
 - **Health Monitoring**: Automatic recovery and error handling for collectors
 - **Centralized Coordination**: Unified management of multiple weather monitoring processes
+- **Scalable Architecture**: Designed for 50+ locations with efficient resource usage
 
 ### Storage (`currents-storage`)
 - **Centralized Data Storage**: Single database with location tagging
@@ -135,6 +136,9 @@ cargo install --path currents-forecast
 
 # Install history tool (optional)
 cargo install --path currents-history
+
+# Install orchestrator (for multi-location monitoring)
+cargo install --path currents-orchestrator
 ```
 
 **Install only what you need:**
@@ -147,6 +151,9 @@ cargo install --path currents-forecast
 
 # Just the history tool (no daemon)
 cargo install --path currents-history
+
+# Just the orchestrator (multi-location monitoring)
+cargo install --path currents-orchestrator
 ```
 
 **Setup the daemon service:**
@@ -258,6 +265,28 @@ currents-forecast --days 3
 
 # Help
 currents-forecast --help
+```
+
+### Multi-Location Monitoring
+
+The orchestrator enables monitoring multiple locations simultaneously:
+
+```bash
+# Configure multiple locations
+cp config.orchestrator.toml.example ~/.config/currents/orchestrator.toml
+# Edit with your locations and API keys
+
+# Start the orchestrator
+currents-orchestrator ~/.config/currents/orchestrator.toml
+
+# Check orchestrator status
+currents-orchestrator --status
+
+# View cross-location correlations
+currents-orchestrator --correlations
+
+# View weather patterns
+currents-orchestrator --patterns
 ```
 
 **Forecast Features:**

@@ -1,44 +1,56 @@
 # Currents Orchestrator Configuration
 # Multi-location weather monitoring coordination
+# Uses multi-location collectors (5-10 locations per process) for efficient resource usage
 
 [orchestrator]
-storage_path = "/tmp/currents-orchestrator.db"
+storage_path = "/var/lib/currents/orchestrator.db"
 analysis_interval = 3600  # 1 hour
 health_check_interval = 300  # 5 minutes
+batch_size = 5  # Locations per collector process (5-10 recommended)
+max_locations_per_collector = 10
 
 # Location configurations
-[locations.london]
+[orchestrator.locations.london]
 name = "London, UK"
 coordinates = [51.5074, -0.1278]
-weather.api_key = "your-openweathermap-api-key"
-weather.provider = "openweathermap"
+weather.api_key = "your-weatherapi-key"
+weather.provider = "weatherapi"
 weather.units = "metric"
-collection.interval = 1800  # 30 minutes
-collection.strategy = "interval"
+weather.collection_interval = 1800  # 30 minutes
+collection_strategy = "interval"
 
-[locations.tokyo]
+[orchestrator.locations.tokyo]
 name = "Tokyo, JP"
 coordinates = [35.6762, 139.6503]
-weather.api_key = "your-openweathermap-api-key"
-weather.provider = "openweathermap"
+weather.api_key = "your-weatherapi-key"
+weather.provider = "weatherapi"
 weather.units = "metric"
-collection.interval = 1800  # 30 minutes
-collection.strategy = "threshold"
+weather.collection_interval = 1800  # 30 minutes
+collection_strategy = "interval"
 
-[locations.sydney]
+[orchestrator.locations.sydney]
 name = "Sydney, AU"
 coordinates = [-33.8688, 151.2093]
-weather.api_key = "your-openweathermap-api-key"
-weather.provider = "openweathermap"
+weather.api_key = "your-weatherapi-key"
+weather.provider = "weatherapi"
 weather.units = "metric"
-collection.interval = 1800  # 30 minutes
-collection.strategy = "hybrid"
+weather.collection_interval = 1800  # 30 minutes
+collection_strategy = "interval"
 
-[locations.denver]
+[orchestrator.locations.denver]
 name = "Denver, CO, US"
 coordinates = [39.7392, -104.9903]
-weather.api_key = "your-openweathermap-api-key"
-weather.provider = "openweathermap"
+weather.api_key = "your-weatherapi-key"
+weather.provider = "weatherapi"
 weather.units = "imperial"
-collection.interval = 1800  # 30 minutes
-collection.strategy = "interval"
+weather.collection_interval = 1800  # 30 minutes
+collection_strategy = "interval"
+
+[orchestrator.locations.new_york]
+name = "New York, US"
+coordinates = [40.7128, -74.0060]
+weather.api_key = "your-weatherapi-key"
+weather.provider = "weatherapi"
+weather.units = "imperial"
+weather.collection_interval = 1800  # 30 minutes
+collection_strategy = "interval"
