@@ -166,7 +166,7 @@ async fn collect_all_locations(config: &MultiCollectorConfig, storage: &WeatherS
                 .collect();
             
             // Wait for all locations in this batch to complete
-            let results = futures::future::join_all(batch_futures).await;
+            let results = future::join_all(batch_futures).await;
             
             // Log results
             let mut success_count = 0;

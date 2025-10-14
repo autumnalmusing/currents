@@ -269,7 +269,7 @@ impl LocationManager {
     }
 
     /// Start a collector for a specific location (legacy method - now redirects to multi-location)
-    pub async fn start_collector(&mut self, location_id: &LocationId) -> Result<CollectorId> {
+    pub async fn start_collector(&mut self, _location_id: &LocationId) -> Result<CollectorId> {
         // For backward compatibility, start all collectors
         self.start_all_collectors().await?;
         Ok(uuid::Uuid::new_v4())
