@@ -1,0 +1,218 @@
+# Currents Orchestrator Configuration with Logical Regions
+# Multi-location weather monitoring with region-based collector grouping
+
+[orchestrator]
+storage_path = "/var/lib/currents/orchestrator.db"
+analysis_interval = 3600  # 1 hour
+health_check_interval = 300  # 5 minutes
+default_batch_size = 5  # Default locations per collector process
+
+# Region configurations
+[regions.europe]
+name = "Europe"
+description = "European weather monitoring"
+max_locations = 15
+batch_size = 5  # 5 locations per collector in this region
+priority = 8  # High priority region
+
+[regions.asia]
+name = "Asia"
+description = "Asian weather monitoring"
+max_locations = 20
+batch_size = 8  # 8 locations per collector in this region
+priority = 7
+
+[regions.americas]
+name = "Americas"
+description = "North and South American weather monitoring"
+max_locations = 25
+batch_size = 10  # 10 locations per collector in this region
+priority = 6
+
+[regions.oceania]
+name = "Oceania"
+description = "Australia and Pacific weather monitoring"
+max_locations = 10
+batch_size = 5
+priority = 5
+
+# Location configurations with region assignments
+[orchestrator.locations.london]
+name = "London, UK"
+coordinates = [51.5074, -0.1278]
+region = "europe"  # Assign to Europe region
+weather.api_key = "your-weatherapi-key"
+weather.provider = "weatherapi"
+weather.units = "metric"
+weather.collection_interval = 1800
+collection_strategy = "interval"
+
+[orchestrator.locations.paris]
+name = "Paris, France"
+coordinates = [48.8566, 2.3522]
+region = "europe"
+weather.api_key = "your-weatherapi-key"
+weather.provider = "weatherapi"
+weather.units = "metric"
+weather.collection_interval = 1800
+collection_strategy = "interval"
+
+[orchestrator.locations.berlin]
+name = "Berlin, Germany"
+coordinates = [52.5200, 13.4050]
+region = "europe"
+weather.api_key = "your-weatherapi-key"
+weather.provider = "weatherapi"
+weather.units = "metric"
+weather.collection_interval = 1800
+collection_strategy = "interval"
+
+[orchestrator.locations.madrid]
+name = "Madrid, Spain"
+coordinates = [40.4168, -3.7038]
+region = "europe"
+weather.api_key = "your-weatherapi-key"
+weather.provider = "weatherapi"
+weather.units = "metric"
+weather.collection_interval = 1800
+collection_strategy = "interval"
+
+[orchestrator.locations.rome]
+name = "Rome, Italy"
+coordinates = [41.9028, 12.4964]
+region = "europe"
+weather.api_key = "your-weatherapi-key"
+weather.provider = "weatherapi"
+weather.units = "metric"
+weather.collection_interval = 1800
+collection_strategy = "interval"
+
+[orchestrator.locations.tokyo]
+name = "Tokyo, Japan"
+coordinates = [35.6762, 139.6503]
+region = "asia"
+weather.api_key = "your-weatherapi-key"
+weather.provider = "weatherapi"
+weather.units = "metric"
+weather.collection_interval = 1800
+collection_strategy = "interval"
+
+[orchestrator.locations.seoul]
+name = "Seoul, South Korea"
+coordinates = [37.5665, 126.9780]
+region = "asia"
+weather.api_key = "your-weatherapi-key"
+weather.provider = "weatherapi"
+weather.units = "metric"
+weather.collection_interval = 1800
+collection_strategy = "interval"
+
+[orchestrator.locations.singapore]
+name = "Singapore"
+coordinates = [1.3521, 103.8198]
+region = "asia"
+weather.api_key = "your-weatherapi-key"
+weather.provider = "weatherapi"
+weather.units = "metric"
+weather.collection_interval = 1800
+collection_strategy = "interval"
+
+[orchestrator.locations.mumbai]
+name = "Mumbai, India"
+coordinates = [19.0760, 72.8777]
+region = "asia"
+weather.api_key = "your-weatherapi-key"
+weather.provider = "weatherapi"
+weather.units = "metric"
+weather.collection_interval = 1800
+collection_strategy = "interval"
+
+[orchestrator.locations.shanghai]
+name = "Shanghai, China"
+coordinates = [31.2304, 121.4737]
+region = "asia"
+weather.api_key = "your-weatherapi-key"
+weather.provider = "weatherapi"
+weather.units = "metric"
+weather.collection_interval = 1800
+collection_strategy = "interval"
+
+[orchestrator.locations.new_york]
+name = "New York, US"
+coordinates = [40.7128, -74.0060]
+region = "americas"
+weather.api_key = "your-weatherapi-key"
+weather.provider = "weatherapi"
+weather.units = "imperial"
+weather.collection_interval = 1800
+collection_strategy = "interval"
+
+[orchestrator.locations.los_angeles]
+name = "Los Angeles, US"
+coordinates = [34.0522, -118.2437]
+region = "americas"
+weather.api_key = "your-weatherapi-key"
+weather.provider = "weatherapi"
+weather.units = "imperial"
+weather.collection_interval = 1800
+collection_strategy = "interval"
+
+[orchestrator.locations.chicago]
+name = "Chicago, US"
+coordinates = [41.8781, -87.6298]
+region = "americas"
+weather.api_key = "your-weatherapi-key"
+weather.provider = "weatherapi"
+weather.units = "imperial"
+weather.collection_interval = 1800
+collection_strategy = "interval"
+
+[orchestrator.locations.toronto]
+name = "Toronto, Canada"
+coordinates = [43.6532, -79.3832]
+region = "americas"
+weather.api_key = "your-weatherapi-key"
+weather.provider = "weatherapi"
+weather.units = "metric"
+weather.collection_interval = 1800
+collection_strategy = "interval"
+
+[orchestrator.locations.mexico_city]
+name = "Mexico City, Mexico"
+coordinates = [19.4326, -99.1332]
+region = "americas"
+weather.api_key = "your-weatherapi-key"
+weather.provider = "weatherapi"
+weather.units = "metric"
+weather.collection_interval = 1800
+collection_strategy = "interval"
+
+[orchestrator.locations.sydney]
+name = "Sydney, Australia"
+coordinates = [-33.8688, 151.2093]
+region = "oceania"
+weather.api_key = "your-weatherapi-key"
+weather.provider = "weatherapi"
+weather.units = "metric"
+weather.collection_interval = 1800
+collection_strategy = "interval"
+
+[orchestrator.locations.melbourne]
+name = "Melbourne, Australia"
+coordinates = [-37.8136, 144.9631]
+region = "oceania"
+weather.api_key = "your-weatherapi-key"
+weather.provider = "weatherapi"
+weather.units = "metric"
+weather.collection_interval = 1800
+collection_strategy = "interval"
+
+[orchestrator.locations.auckland]
+name = "Auckland, New Zealand"
+coordinates = [-36.8485, 174.7633]
+region = "oceania"
+weather.api_key = "your-weatherapi-key"
+weather.provider = "weatherapi"
+weather.units = "metric"
+weather.collection_interval = 1800
+collection_strategy = "interval"

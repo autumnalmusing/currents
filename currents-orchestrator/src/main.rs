@@ -1,7 +1,7 @@
 //! Currents Orchestrator - Multi-location weather monitoring coordination
 
 use currents_orchestrator::{
-    LocationManager, CollectorCoordinator, CrossLocationAnalyzer,
+    LocationManager, CollectorCoordinator, CrossLocationAnalyzer, RegionManager,
     OrchestratorConfig
 };
 use currents_storage::WeatherStorage;
@@ -18,10 +18,41 @@ async fn main() -> Result<()> {
 
     info!("Starting Currents Orchestrator");
 
-    // Load configuration
-    let config_path = std::env::args()
-        .nth(1)
-        .unwrap_or_else(|| "~/.config/currents/orchestrator.toml".to_string());
+    // Parse command line arguments
+    let args: Vec<String> = std::env::args().collect();
+    let mut config_path = "~/.config/currents/orchestrator.toml".to_string();
+    let mut use_regions = false;
+    
+    for (i, arg) in args.iter().enumerate() {
+        match arg.as_str() {
+            "--config" | "-c" => {
+                if i + 1 < args.len() {
+                    config_path = args[i + 1].clone();
+                }
+            }
+            "--regions" | "-r" => {
+                use_regions = true;
+            }
+            "--help" | "-h" => {
+                println!("Currents Orchestrator - Multi-location weather monitoring");
+                println!();
+                println!("Usage: currents-orchestrator [OPTIONS]");
+                println!();
+                println!("Options:");
+                println!("  -c, --config PATH    Configuration file path");
+                println!("  -r, --regions        Use region-based collector grouping");
+                println!("  -h, --help           Show this help message");
+                println!();
+                println!("Examples:");
+                println!("  currents-orchestrator                                    # Use default config");
+                println!("  currents-orchestrator -c /path/to/config.toml            # Custom config");
+                println!("  currents-orchestrator --regions                          # Use region grouping");
+                println!("  currents-orchestrator -c config.toml --regions           # Custom config with regions");
+                return Ok(());
+            }
+            _ => {}
+        }
+    }
     
     let config = OrchestratorConfig::from_file(&config_path)
         .with_context(|| format!("Failed to load configuration from: {}", config_path))?;
@@ -57,13 +88,54 @@ async fn main() -> Result<()> {
 
     let cross_location_analyzer = CrossLocationAnalyzer::new(storage.clone());
 
-    // Start collectors using multi-location approach (5-10 locations per process)
-    match location_manager.start_all_collectors().await {
-        Ok(()) => {
-            info!("Started multi-location collectors for {} locations", config.locations.len());
+    // Choose collector approach based on command line flag
+    if use_regions {
+        info!("Using region-based collector grouping");
+        
+        // Create region manager
+        let mut region_manager = RegionManager::new(
+            config.storage_path.clone(),
+            config.batch_size.unwrap_or(5),
+        );
+        
+        // Add locations to regions (for now, simple round-robin assignment)
+        // In practice, you'd read region assignments from config
+        let mut region_count = 0;
+        let mut current_region = "default".to_string();
+        
+        for (location_id, location_config) in &config.locations {
+            if region_count >= 5 { // 5 locations per region
+                current_region = format!("region_{}", region_count / 5 + 1);
+            }
+            
+            region_manager.add_location_to_region(
+                location_id.clone(),
+                location_config.clone(),
+                current_region.clone(),
+            );
+            region_count += 1;
         }
-        Err(e) => {
-            error!("Failed to start multi-location collectors: {}", e);
+        
+        // Start region-based collectors
+        match region_manager.start_all_collectors().await {
+            Ok(()) => {
+                info!("Started region-based collectors for {} locations", config.locations.len());
+            }
+            Err(e) => {
+                error!("Failed to start region-based collectors: {}", e);
+            }
+        }
+    } else {
+        info!("Using automatic batching approach");
+        
+        // Start collectors using multi-location approach (5-10 locations per process)
+        match location_manager.start_all_collectors().await {
+            Ok(()) => {
+                info!("Started multi-location collectors for {} locations", config.locations.len());
+            }
+            Err(e) => {
+                error!("Failed to start multi-location collectors: {}", e);
+            }
         }
     }
 

@@ -18,6 +18,7 @@ pub struct OrchestratorSection {
     pub storage_path: Option<String>,
     pub analysis_interval: Option<u64>,
     pub health_check_interval: Option<u64>,
+    pub batch_size: Option<usize>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -139,6 +140,7 @@ impl TryFrom<OrchestratorConfigToml> for OrchestratorConfig {
                 .unwrap_or_else(|| "~/.config/currents/orchestrator.db".to_string()),
             analysis_interval: toml.orchestrator.analysis_interval.unwrap_or(3600),
             health_check_interval: toml.orchestrator.health_check_interval.unwrap_or(300),
+            batch_size: toml.orchestrator.batch_size,
             locations,
         })
     }
@@ -177,6 +179,7 @@ impl From<&OrchestratorConfig> for OrchestratorConfigToml {
                 storage_path: Some(config.storage_path.clone()),
                 analysis_interval: Some(config.analysis_interval),
                 health_check_interval: Some(config.health_check_interval),
+                batch_size: config.batch_size,
             },
             locations,
         }

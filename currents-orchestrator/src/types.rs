@@ -152,6 +152,7 @@ pub struct OrchestratorConfig {
     pub storage_path: String,
     pub analysis_interval: u64, // seconds
     pub health_check_interval: u64, // seconds
+    pub batch_size: Option<usize>, // locations per collector process
     pub locations: HashMap<LocationId, LocationConfig>,
 }
 
@@ -161,6 +162,7 @@ impl Default for OrchestratorConfig {
             storage_path: "~/.config/currents/orchestrator.db".to_string(),
             analysis_interval: 3600, // 1 hour
             health_check_interval: 300, // 5 minutes
+            batch_size: Some(5),
             locations: HashMap::new(),
         }
     }
