@@ -178,7 +178,14 @@ impl LocationManager {
         let collector_id = uuid::Uuid::new_v4();
         
         // Spawn the simple-collector process
-        let mut command = Command::new("./target/release/simple-collector");
+        // Use debug binary for tests, release for production
+        let binary_path = if cfg!(debug_assertions) {
+            "/home/autumn/projects/currents/target/debug/simple-collector"
+        } else {
+            "/home/autumn/projects/currents/target/release/simple-collector"
+        };
+        
+        let mut command = Command::new(binary_path);
         command
             .env("COLLECTOR_LOCATION_ID", location_id)
             .env("COLLECTOR_LOCATION_NAME", &location.name)

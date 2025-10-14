@@ -27,7 +27,7 @@ async fn test_weather_history_storage() -> Result<()> {
     };
     
     // Store the data
-    storage.store_weather_data(&weather_data).await?;
+    storage.store_weather_data("test-location", &weather_data).await?;
     
     // Retrieve the data
     let retrieved_data = storage.get_weather_history(1).await?;
@@ -60,7 +60,7 @@ async fn test_pattern_analysis() -> Result<()> {
             timestamp: base_time + chrono::Duration::hours(i as i64 * 4), // 4 hours apart
         };
         
-        storage.store_weather_data(&weather_data).await?;
+        storage.store_weather_data("test-location", &weather_data).await?;
     }
     
     // Test trend analysis
@@ -94,7 +94,7 @@ async fn test_database_stats() -> Result<()> {
             timestamp: Utc::now() - chrono::Duration::hours(i as i64),
         };
         
-        storage.store_weather_data(&weather_data).await?;
+        storage.store_weather_data("test-location", &weather_data).await?;
     }
     
     // Get database statistics

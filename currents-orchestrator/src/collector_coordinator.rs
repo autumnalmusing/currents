@@ -122,7 +122,14 @@ impl CollectorCoordinator {
         collector_id: &CollectorId,
     ) -> Result<(u32, tokio::process::Child)> {
         // Spawn the simple-collector process
-        let mut command = Command::new("./target/release/simple-collector");
+        // Use debug binary for tests, release for production
+        let binary_path = if cfg!(debug_assertions) {
+            "/home/autumn/projects/currents/target/debug/simple-collector"
+        } else {
+            "/home/autumn/projects/currents/target/release/simple-collector"
+        };
+        
+        let mut command = Command::new(binary_path);
         command
             .env("COLLECTOR_ID", collector_id.to_string())
             .env("COLLECTOR_LOCATION_ID", location_id)
