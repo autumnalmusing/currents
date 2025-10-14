@@ -57,15 +57,13 @@ async fn main() -> Result<()> {
 
     let cross_location_analyzer = CrossLocationAnalyzer::new(storage.clone());
 
-    // Start collectors for all locations
-    for location_id in config.locations.keys() {
-        match location_manager.start_collector(location_id).await {
-            Ok(collector_id) => {
-                info!("Started collector {} for location: {}", collector_id, location_id);
-            }
-            Err(e) => {
-                error!("Failed to start collector for location {}: {}", location_id, e);
-            }
+    // Start collectors using multi-location approach (5-10 locations per process)
+    match location_manager.start_all_collectors().await {
+        Ok(()) => {
+            info!("Started multi-location collectors for {} locations", config.locations.len());
+        }
+        Err(e) => {
+            error!("Failed to start multi-location collectors: {}", e);
         }
     }
 

@@ -128,6 +128,22 @@ services.currents.locations = {
 - **currents-forecast**: Weather forecast display
 - **currents-history**: Historical data analysis
 
+### Multi-Location Architecture
+
+The system uses an efficient multi-location collector architecture:
+
+- **5-10 locations per collector process** (configurable)
+- **Automatic load balancing** across collector groups
+- **Fault isolation** - if one collector fails, others continue
+- **Resource efficient** - much better than 1 location per process
+- **Scalable** - designed for 50+ locations
+
+**Example with 50 locations:**
+- **10 collector processes** (5 locations each)
+- **1 orchestrator container** (main coordinator)
+- **1 shared database** (SQLite)
+- **Total: 11 processes** instead of 51 processes
+
 ### Data Collection
 
 - **Locations**: London, UK and Tokyo, JP (configurable)
@@ -135,6 +151,8 @@ services.currents.locations = {
 - **Storage**: Centralized SQLite database
 - **Retention**: 1 year (configurable)
 - **Provider**: WeatherAPI (supports historical data up to 365 days)
+- **Architecture**: Multi-location collectors (5-10 locations per process)
+- **Scalability**: Optimized for 50+ locations with efficient resource usage
 
 ### Management Commands
 

@@ -10,6 +10,18 @@ use std::time::{Duration, Instant};
 use tokio::time::interval;
 use tokio::process::Command;
 use tracing::{info, warn, error, debug};
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct MultiLocationConfig {
+    id: String,
+    name: String,
+    coordinates: (f64, f64),
+    api_key: String,
+    provider: String,
+    units: String,
+    collection_interval: u64,
+}
 
 /// Manages multiple weather collection locations
 pub struct LocationManager {
@@ -134,39 +146,133 @@ impl LocationManager {
         Ok(())
     }
 
-    /// Start a collector for a specific location
-    pub async fn start_collector(&mut self, location_id: &LocationId) -> Result<CollectorId> {
-        let location = self.locations.get(location_id)
-            .ok_or_else(|| anyhow::anyhow!("Location not found: {}", location_id))?;
-
-        // Check if collector is already running
-        if self.collectors.contains_key(location_id) {
-            return Err(anyhow::anyhow!("Collector already running for location: {}", location_id));
+    /// Start collectors for all locations using multi-location approach
+    pub async fn start_all_collectors(&mut self) -> Result<()> {
+        info!("Starting multi-location collectors for {} locations", self.locations.len());
+        
+        // Distribute locations across collector groups (5-10 locations per group)
+        let location_groups = self.distribute_locations(5); // 5 locations per collector
+        info!("Created {} collector groups", location_groups.len());
+        
+        // Start each collector group
+        for (group_id, locations) in location_groups {
+            self.start_collector_group(group_id, locations).await?;
         }
-
-        // Spawn collector process
-        let (collector_id, process_id, child) = self.spawn_collector_process(location_id, location)?;
-
-        // Create collector handle with real process ID
+        
+        Ok(())
+    }
+    
+    /// Distribute locations across collector groups
+    fn distribute_locations(&self, batch_size: usize) -> Vec<(CollectorId, Vec<LocationId>)> {
+        let mut groups = Vec::new();
+        let mut current_group = Vec::new();
+        let mut current_collector_id = uuid::Uuid::new_v4();
+        
+        for location_id in self.locations.keys() {
+            current_group.push(location_id.clone());
+            
+            // If group is full, create a new group
+            if current_group.len() >= batch_size {
+                groups.push((current_collector_id, current_group));
+                current_group = Vec::new();
+                current_collector_id = uuid::Uuid::new_v4();
+            }
+        }
+        
+        // Add remaining locations
+        if !current_group.is_empty() {
+            groups.push((current_collector_id, current_group));
+        }
+        
+        groups
+    }
+    
+    /// Start a collector group (multiple locations per process)
+    async fn start_collector_group(&mut self, collector_id: CollectorId, location_ids: Vec<LocationId>) -> Result<()> {
+        info!("Starting collector {} for {} locations", collector_id, location_ids.len());
+        
+        // Prepare location configurations for this collector
+        let location_configs: Vec<_> = location_ids.iter()
+            .filter_map(|id| self.locations.get(id))
+            .map(|config| MultiLocationConfig {
+                id: config.id.clone(),
+                name: config.name.clone(),
+                coordinates: config.coordinates,
+                api_key: config.weather_config.api_key.clone(),
+                provider: config.weather_config.provider.clone(),
+                units: config.weather_config.units.clone(),
+                collection_interval: config.weather_config.collection_interval,
+            })
+            .collect();
+        
+        // Spawn the multi-collector process
+        let (process_id, child) = self.spawn_multi_collector_process(&collector_id, &location_configs).await?;
+        
+        // Create collector handle for the group
         let collector_handle = CollectorHandle {
             id: collector_id,
-            location_id: location_id.clone(),
+            location_id: format!("group_{}", collector_id), // Use group ID as location ID
             status: crate::types::CollectorStatus::Starting,
             last_heartbeat: Instant::now(),
             process_id: Some(process_id),
         };
-
-        // Store both the collector handle and the process
-        self.collectors.insert(location_id.clone(), collector_handle);
-        self.processes.insert(location_id.clone(), child);
         
-        // Update health status
-        if let Some(health) = self.health_status.get_mut(location_id) {
-            health.status = HealthStatus::Healthy;
+        // Store collector and process
+        self.collectors.insert(format!("group_{}", collector_id), collector_handle);
+        self.processes.insert(format!("group_{}", collector_id), child);
+        
+        // Update health status for all locations in this collector
+        for location_id in &location_ids {
+            if let Some(health) = self.health_status.get_mut(location_id) {
+                health.status = HealthStatus::Healthy;
+            }
         }
+        
+        info!("Started multi-location collector {} (PID: {}) for {} locations", 
+              collector_id, process_id, location_ids.len());
+        
+        Ok(())
+    }
+    
+    /// Spawn a multi-collector process
+    async fn spawn_multi_collector_process(
+        &self,
+        collector_id: &CollectorId,
+        location_configs: &[MultiLocationConfig],
+    ) -> Result<(u32, tokio::process::Child)> {
+        // Serialize location configurations
+        let locations_json = serde_json::to_string(location_configs)
+            .context("Failed to serialize location configurations")?;
+        
+        // Spawn the multi-collector process
+        let binary_path = if cfg!(debug_assertions) {
+            "/home/autumn/projects/currents/target/debug/multi-collector"
+        } else {
+            "/home/autumn/projects/currents/target/release/multi-collector"
+        };
+        
+        let mut command = Command::new(binary_path);
+        command
+            .env("COLLECTOR_ID", collector_id.to_string())
+            .env("COLLECTOR_LOCATIONS", locations_json)
+            .env("COLLECTOR_STORAGE_PATH", &self.get_storage_path())
+            .env("COLLECTOR_BATCH_SIZE", "5")
+            .env("COLLECTOR_MAX_RETRIES", "3")
+            .env("COLLECTOR_RETRY_DELAY", "60");
 
-        info!("Started collector {} (PID: {}) for location: {}", collector_id, process_id, location_id);
-        Ok(collector_id)
+        let child = command.spawn()
+            .context("Failed to spawn multi-collector process")?;
+
+        let process_id = child.id().unwrap_or(0);
+        
+        Ok((process_id, child))
+    }
+
+    /// Start a collector for a specific location (legacy method - now redirects to multi-location)
+    pub async fn start_collector(&mut self, location_id: &LocationId) -> Result<CollectorId> {
+        // For backward compatibility, start all collectors
+        self.start_all_collectors().await?;
+        Ok(uuid::Uuid::new_v4())
     }
     
     /// Spawn collector process (internal method)

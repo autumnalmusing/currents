@@ -6,6 +6,8 @@
 let
   # Configuration
   weatherapiKey = "your-weatherapi-key-here";
+  batchSize = 5;  # Locations per collector process (5-10 recommended)
+  maxLocationsPerCollector = 10;
   
   # Generate orchestrator configuration
   orchestratorConfig = pkgs.writeText "orchestrator.toml" ''

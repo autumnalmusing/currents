@@ -10,6 +10,10 @@ description = "Multi-location weather monitoring orchestrator"
 name = "simple-collector"
 path = "src/bin/simple-collector.rs"
 
+[[bin]]
+name = "multi-collector"
+path = "src/bin/multi-collector.rs"
+
 [dependencies]
 currents-core = { workspace = true }
 currents-storage = { workspace = true }
