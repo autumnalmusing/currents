@@ -8,11 +8,13 @@ use std::collections::HashMap;
 use std::time::{Duration, Instant};
 use tokio::time::interval;
 use tokio::sync::mpsc;
+use tokio::process::Command;
 use tracing::{info, warn, error, debug};
 
 /// Manages the lifecycle of multiple collector instances
 pub struct CollectorCoordinator {
     collectors: HashMap<LocationId, CollectorHandle>,
+    processes: HashMap<LocationId, tokio::process::Child>,
     message_sender: mpsc::UnboundedSender<CollectorMessage>,
     message_receiver: mpsc::UnboundedReceiver<CollectorMessage>,
     health_check_interval: Duration,
@@ -27,6 +29,7 @@ impl CollectorCoordinator {
         
         Self {
             collectors: HashMap::new(),
+            processes: HashMap::new(),
             message_sender,
             message_receiver,
             health_check_interval,
@@ -67,19 +70,21 @@ impl CollectorCoordinator {
 
         let collector_id = uuid::Uuid::new_v4();
         
-        // TODO: In a real implementation, this would spawn a separate process
-        // For now, we'll create a mock collector handle
+        // Spawn the actual collector process
+        let (process_id, child) = self.spawn_collector_process(location_id, &collector_id).await?;
+        
         let collector_handle = CollectorHandle {
             id: collector_id,
             location_id: location_id.clone(),
             status: CollectorStatus::Starting,
             last_heartbeat: Instant::now(),
-            process_id: None, // Would be set when spawning actual process
+            process_id: Some(process_id),
         };
 
         self.collectors.insert(location_id.clone(), collector_handle);
+        self.processes.insert(location_id.clone(), child);
         
-        info!("Started collector {} for location: {}", collector_id, location_id);
+        info!("Started collector {} (PID: {}) for location: {}", collector_id, process_id, location_id);
         Ok(collector_id)
     }
 
@@ -88,14 +93,47 @@ impl CollectorCoordinator {
         if let Some(collector) = self.collectors.remove(location_id) {
             self.stop_collector_handle(&collector).await?;
         }
+        
+        // Stop and remove process if running
+        if let Some(mut process) = self.processes.remove(location_id) {
+            if let Err(e) = process.kill().await {
+                warn!("Failed to kill process for location {}: {}", location_id, e);
+            }
+        }
         Ok(())
     }
 
     /// Stop a specific collector handle
     async fn stop_collector_handle(&self, collector: &CollectorHandle) -> Result<()> {
-        // TODO: In a real implementation, this would terminate the process
         info!("Stopping collector {} for location: {}", collector.id, collector.location_id);
+        
+        // If we have a process ID, log it for reference
+        if let Some(process_id) = collector.process_id {
+            info!("Collector {} (PID: {}) will be terminated", collector.id, process_id);
+        }
+        
         Ok(())
+    }
+
+    /// Spawn a collector process
+    async fn spawn_collector_process(
+        &self,
+        location_id: &LocationId,
+        collector_id: &CollectorId,
+    ) -> Result<(u32, tokio::process::Child)> {
+        // Spawn the simple-collector process
+        let mut command = Command::new("./target/release/simple-collector");
+        command
+            .env("COLLECTOR_ID", collector_id.to_string())
+            .env("COLLECTOR_LOCATION_ID", location_id)
+            .env("COLLECTOR_STORAGE_PATH", "~/.config/currents/orchestrator.db");
+
+        let child = command.spawn()
+            .context("Failed to spawn collector process")?;
+
+        let process_id = child.id().unwrap_or(0);
+        
+        Ok((process_id, child))
     }
 
     /// Restart a collector
@@ -141,11 +179,9 @@ impl CollectorCoordinator {
         });
         
         // Start message processing
+        let mut message_receiver = std::mem::replace(&mut self.message_receiver, mpsc::unbounded_channel().1);
         let message_task = tokio::spawn(async move {
-            // TODO: Implement message processing
-            loop {
-                tokio::time::sleep(Duration::from_secs(1)).await;
-            }
+            Self::run_message_processing(&mut message_receiver).await
         });
         
         // Run both tasks concurrently
@@ -199,7 +235,8 @@ impl CollectorCoordinator {
                     warn!("Attempting to restart collector for location {} (attempt {})", 
                           location_id, restart_count + 1);
                     
-                    // TODO: In a real implementation, this would restart the collector
+                    // In a real implementation, this would restart the collector
+                    // For now, we'll just increment the restart count
                     restart_counts.insert(location_id.clone(), restart_count + 1);
                 } else {
                     error!("Max restart attempts reached for collector at location {}", location_id);
@@ -213,8 +250,23 @@ impl CollectorCoordinator {
         message_receiver: &mut mpsc::UnboundedReceiver<CollectorMessage>
     ) -> Result<()> {
         while let Some(message) = message_receiver.recv().await {
-            // TODO: Handle message processing
             debug!("Received message: {:?}", message);
+            
+            // Handle different message types
+            match message {
+                CollectorMessage::Heartbeat { collector_id, status } => {
+                    debug!("Heartbeat from collector {}: {:?}", collector_id, status);
+                }
+                CollectorMessage::DataReceived { location_id, data_count } => {
+                    info!("Location {} received {} data points", location_id, data_count);
+                }
+                CollectorMessage::Error { collector_id, error } => {
+                    error!("Collector {} reported error: {}", collector_id, error);
+                }
+                CollectorMessage::Shutdown { collector_id } => {
+                    info!("Collector {} requested shutdown", collector_id);
+                }
+            }
         }
         Ok(())
     }

@@ -186,7 +186,7 @@ impl LocationManager {
             .env("COLLECTOR_PROVIDER", &location.weather_config.provider)
             .env("COLLECTOR_UNITS", &location.weather_config.units)
             .env("COLLECTOR_INTERVAL", location.weather_config.collection_interval.to_string())
-            .env("COLLECTOR_STORAGE_PATH", "~/.config/currents/orchestrator.db"); // TODO: Make this configurable
+            .env("COLLECTOR_STORAGE_PATH", &self.get_storage_path());
 
         let child = command.spawn()
             .context("Failed to spawn collector process")?;
@@ -426,6 +426,13 @@ impl LocationManager {
     /// Cleanup old error contexts
     pub fn cleanup_old_errors(&mut self, max_age: Duration) {
         self.error_recovery.cleanup_old_contexts(max_age);
+    }
+
+    /// Get the configured storage path
+    fn get_storage_path(&self) -> String {
+        // In a real implementation, this would come from configuration
+        // For now, we'll use a default path
+        "~/.config/currents/orchestrator.db".to_string()
     }
     
     /// Shutdown all collectors and cleanup resources

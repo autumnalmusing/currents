@@ -262,10 +262,80 @@ impl<'a> PatternAnalyzer<'a> {
         Ok(None)
     }
     
-    /// Analyze precipitation patterns
-    fn analyze_precipitation_pattern(&self, _daily_data: &[DailyWeather]) -> Result<Option<WeatherPattern>> {
-        // TODO: Implement precipitation pattern analysis
-        // This would require precipitation data in DailyWeather
+    /// Analyze precipitation patterns (using humidity as proxy since precipitation data not available)
+    fn analyze_precipitation_pattern(&self, daily_data: &[DailyWeather]) -> Result<Option<WeatherPattern>> {
+        if daily_data.len() < 7 {
+            return Ok(None);
+        }
+        
+        // Use humidity as a proxy for precipitation patterns
+        // High humidity often correlates with precipitation
+        let humidities: Vec<f64> = daily_data.iter().map(|d| d.avg_humidity).collect();
+        let avg_humidity = humidities.iter().sum::<f64>() / humidities.len() as f64;
+        let max_humidity = humidities.iter().fold(0.0, |acc, &x| f64::max(acc, x));
+        let min_humidity = humidities.iter().fold(100.0, |acc, &x| f64::min(acc, x));
+        
+        // Detect high humidity periods (potential rain periods)
+        let mut max_consecutive = 0;
+        let mut current_consecutive = 0;
+        
+        for humidity in &humidities {
+            if *humidity > avg_humidity + 20.0 { // 20% above average
+                current_consecutive += 1;
+                max_consecutive = max_consecutive.max(current_consecutive);
+            } else {
+                current_consecutive = 0;
+            }
+        }
+        
+        // Detect patterns based on humidity variations
+        if max_consecutive >= 3 {
+            return Ok(Some(WeatherPattern {
+                current_value: max_humidity,
+                historical_average: avg_humidity,
+                trend_description: format!(
+                    "High humidity period detected: {} consecutive days with humidity above {}%",
+                    max_consecutive, avg_humidity + 20.0
+                ),
+                temperature_difference: 0.0, // Not applicable for humidity analysis
+                humidity_difference: max_humidity - avg_humidity,
+                wind_difference: 0.0, // Not applicable for humidity analysis
+                comparison_period_days: daily_data.len() as u32,
+            }));
+        }
+        
+        // Detect extreme humidity variations
+        if max_humidity - min_humidity > 50.0 {
+            return Ok(Some(WeatherPattern {
+                current_value: max_humidity,
+                historical_average: avg_humidity,
+                trend_description: format!(
+                    "Extreme humidity variation: {:.1}% range ({}% to {}%)",
+                    max_humidity - min_humidity, min_humidity, max_humidity
+                ),
+                temperature_difference: 0.0,
+                humidity_difference: max_humidity - min_humidity,
+                wind_difference: 0.0,
+                comparison_period_days: daily_data.len() as u32,
+            }));
+        }
+        
+        // Detect consistently low humidity (dry period)
+        if avg_humidity < 30.0 {
+            return Ok(Some(WeatherPattern {
+                current_value: avg_humidity,
+                historical_average: 50.0, // Assume 50% as "normal"
+                trend_description: format!(
+                    "Extended dry period: average humidity {:.1}% over {} days",
+                    avg_humidity, daily_data.len()
+                ),
+                temperature_difference: 0.0,
+                humidity_difference: avg_humidity - 50.0,
+                wind_difference: 0.0,
+                comparison_period_days: daily_data.len() as u32,
+            }));
+        }
+        
         Ok(None)
     }
     

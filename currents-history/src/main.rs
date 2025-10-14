@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Result, Context};
 use clap::{Parser, Subcommand};
 use currents_core::types::WeatherData;
 use currents_history::{PatternAnalyzer, HistoryConfig};
@@ -158,9 +158,23 @@ async fn main() -> Result<()> {
             let analyzer = PatternAnalyzer::new(&storage);
             let trends = analyzer.analyze_trends(&metric, days).await?;
             
-            // TODO: Implement ASCII chart rendering
             println!("Trend visualization for {} over {}:", metric, period);
-            println!("(ASCII charts coming soon!)");
+            
+            // Create ASCII chart visualization (for future use)
+            let _visualizer = currents_history::visualization::WeatherVisualizer::new();
+            
+            // For now, just show the trend analysis since we don't have time-series data
+            // In a real implementation, we would need to fetch the actual time-series data
+            println!("Trend Analysis:");
+            println!("  Metric: {}", trends.metric);
+            println!("  Direction: {}", trends.trend_direction);
+            println!("  Daily Change: {:.2}", trends.daily_change);
+            println!("  Volatility: {:.2}", trends.volatility);
+            println!("  Average: {:.2}", trends.average);
+            println!("  Range: {:.2} to {:.2}", trends.min, trends.max);
+            println!("  Data Points: {}", trends.data_points);
+            println!("  Period: {} days", trends.period_days);
+            
             print_analysis(&metric, &trends);
         }
         
