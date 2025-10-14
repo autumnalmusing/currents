@@ -10,6 +10,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::time::interval;
 use tracing::{info, warn, error, debug};
+use shellexpand;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -20,7 +21,7 @@ async fn main() -> Result<()> {
 
     // Parse command line arguments
     let args: Vec<String> = std::env::args().collect();
-    let mut config_path = "~/.config/currents/orchestrator.toml".to_string();
+    let mut config_path = shellexpand::tilde("~/.config/currents/orchestrator.toml").to_string();
     let mut use_regions = false;
     
     for (i, arg) in args.iter().enumerate() {
